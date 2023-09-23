@@ -1,8 +1,4 @@
-import logging
-
-
-logger = logging.getLogger(__name__)
-
+from logger import logger
 
 class ScheduleSender:
 
@@ -31,10 +27,6 @@ class ScheduleSender:
         return message
 
     def get_shedule(self) -> str:
-        logger.error(f'Получен запрос на загрузку расписания с {self._input_params}')
+        logger.info(f'Получен запрос на загрузку расписания с {self._input_params}')
         return self._construct_schedule()
 
-
-if __name__ == "__main__":
-    sender = ScheduleSender({}).get_shedule()
-    print(sender)
