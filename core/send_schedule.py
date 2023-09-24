@@ -15,7 +15,7 @@ class BaseDataConstructor:
     def _validate_schedule(self, data) -> dict:
         return data
 
-    def _constructor(self, data: dict) -> str:
+    def constructor(self, data: dict) -> str:
         schedule_message = f"Ваше расписание:\n\n{data}"
         return schedule_message
 
@@ -23,8 +23,7 @@ class BaseDataConstructor:
         schedule = self.request_schedule()
         clean_schedule = self.clean_schedule(data=schedule)
         valide_scheule = self._validate_schedule(data=clean_schedule)
-        message = self._constructor(data=valide_scheule)
-        return message
+        return self.constructor(data=valide_scheule)
 
     def get_shedule(self) -> str:
         logger.info(f'Получен запрос на загрузку расписания с {self._input_params}')
