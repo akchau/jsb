@@ -34,8 +34,6 @@ async def not_known_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-
-
 def start_bot():
     logger.info("Запуск бота.")
     application = ApplicationBuilder().token(settings.BOT_TOKEN).build()
@@ -48,8 +46,6 @@ def start_bot():
 
     echo_handler = MessageHandler(filters.TEXT, not_known_message)
     application.add_handler(echo_handler)
-
-
 
     logger.info("Бот запущен.")
     application.run_polling()

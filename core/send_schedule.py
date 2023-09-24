@@ -1,15 +1,15 @@
 from logger import logger
 
-class ScheduleSender:
+class BaseDataConstructor:
 
     def __init__(self, input_params: dict) -> None:
         self._input_params: dict = input_params
 
-    def _request_schedule(self) -> dict:
+    def request_schedule(self) -> dict:
         data = {}
         return data
 
-    def _clean_schedule(self, data: dict) -> dict:
+    def clean_schedule(self, data: dict) -> dict:
         return data
 
     def _validate_schedule(self, data) -> dict:
@@ -20,8 +20,8 @@ class ScheduleSender:
         return schedule_message
 
     def _construct_schedule(self) -> str:
-        schedule = self._request_schedule()
-        clean_schedule = self._clean_schedule(data=schedule)
+        schedule = self.request_schedule()
+        clean_schedule = self.clean_schedule(data=schedule)
         valide_scheule = self._validate_schedule(data=clean_schedule)
         message = self._constructor(data=valide_scheule)
         return message
