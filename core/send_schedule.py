@@ -15,11 +15,11 @@ class BaseDataConstructor:
     def _validate_schedule(self, data) -> dict:
         return data
 
-    def constructor(self, data: dict) -> str:
+    def constructor(self, data: dict) -> list:
         schedule_message = f"Ваше расписание:\n\n{data}"
         return schedule_message
 
-    def _construct_schedule(self) -> str:
+    def _construct_schedule(self) -> list:
         schedule = self.request_schedule()
         clean_schedule = self.clean_schedule(data=schedule)
         valide_scheule = self._validate_schedule(data=clean_schedule)
