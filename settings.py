@@ -6,8 +6,17 @@ load_dotenv()
 
 DEBUG = True
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
 REQUESTS_IN_DAY = 400
+PAGINATION = 120
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 API_KEY = os.getenv("YANDEX_API_KEY")
-API_DOMAIN = os.getenv("API_DOMAIN")
-PAGINATION = 70
+
+JELEZNODOROJNAYA = {
+    "code": "s9601675",
+}
+NIJEGORODSKAYA = {
+    "code": "s9601835",
+}
+STATIONS = [(JELEZNODOROJNAYA, NIJEGORODSKAYA)]
+
