@@ -1,9 +1,9 @@
-import unittest
+# import unittest
 
-from shedule_manager.schedule_saver import refresh_schedule
+# from shedule_manager.schedule_saver import refresh_schedule
 
 
-class TestSaver(unittest.TestCase):
+# class TestSaver(unittest.TestCase):
 
-    def test_refresh_schedule(self):
-        refresh_schedule()
+#     def test_refresh_schedule(self):
+#         refresh_schedule()

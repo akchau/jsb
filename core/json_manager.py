@@ -5,6 +5,15 @@ from core.file_manger import object_is_file
 
 
 def load_dict_in_json(filepath: str, data: dict) -> None:
+    """
+    Утилита, которая загружает в json-файл структуру словарь.
+
+    Args:
+
+        - filepath (str): Путь файла, в который будет загружаться словарь
+
+        - data (dict): Словарь.
+    """
     if not object_is_file(filepath=filepath):
         with open(file=filepath, mode="w", encoding='utf-8') as new_json:
             json.dump(data, new_json, indent=4, ensure_ascii=False)
