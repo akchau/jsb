@@ -2,7 +2,7 @@ import os
 import shutil
 import unittest
 
-from core.file_manger import object_is_file
+from core.file_manger import delete_file, object_is_file
 
 
 class TestClass:
@@ -155,3 +155,49 @@ class TestCoreFileManger(unittest.TestCase):
         - Объект класса.
         """
         self.assertFalse(object_is_file(TestClass()))
+
+    def test_object_is_file_with_none(self):
+        """
+        Тестируемая функция:
+
+        - object_is_file()
+
+        Тестируемое значение:
+
+        - Объект класса.
+        """
+        self.assertFalse(object_is_file(None))
+
+
+class TestDeleteFile(unittest.TestCase):
+
+    MODULE_PATH = os.path.abspath(__file__)
+    TEMP_FIXTURE_DIRPATH = os.path.join(
+        os.path.dirname(MODULE_PATH),
+        "__fixture__"
+    )
+
+    def setUp(self) -> None:
+        """Создание папки для тестов __fixtures__."""
+        os.mkdir(self.TEMP_FIXTURE_DIRPATH)
+
+    def tearDown(self) -> None:
+        """Удаление папки для тестов __fixtures__."""
+        shutil.rmtree(self.TEMP_FIXTURE_DIRPATH)
+
+    def test_delete_file_with_non_exist_file(self):
+        """
+        Тестируемая функция:
+
+        - delete_file()
+
+        Тестируемое значение:
+
+        - Несуществующий путь.
+        """
+        NON_EXIST_FILENAME = "non_exist.txt"
+        NON_EXIST_FILEPATH = os.path.join(
+            self.TEMP_FIXTURE_DIRPATH,
+            NON_EXIST_FILENAME
+        )
+        self.assertIsNone(delete_file(NON_EXIST_FILEPATH))
