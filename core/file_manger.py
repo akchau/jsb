@@ -1,11 +1,10 @@
 import os
 from typing import Union
 
-from core.validators import string_validator
-
 
 def object_is_file(filepath: str) -> bool:
-    """Утилита которая проверяется, является ли объект файлом.
+    """
+    Утилита которая проверяется, является ли объект файлом.
 
     Args:
 
@@ -15,13 +14,15 @@ def object_is_file(filepath: str) -> bool:
 
         str: Ответ на вопрос, лежит ли по указанному пути файл.
     """
-    if string_validator(value=filepath):
+    if isinstance(filepath, str):
         return os.path.isfile(filepath)
     return False
 
 
 def delete_file(filepath: str) -> Union[str, None]:
     """
+    Утилита которая удаляет файл.
+
     Args:
 
         - filepath (str): Путь удаялемого файла.
@@ -30,7 +31,10 @@ def delete_file(filepath: str) -> Union[str, None]:
         - Union[str, None]: Если файл удален - путь файла, или None.
     """
     if object_is_file(filepath=filepath):
-        os.remove(filepath)
+        try:
+            os.remove(filepath)
+        except PermissionError:
+            return None
     else:
         return None
     if not object_is_file(filepath=filepath):

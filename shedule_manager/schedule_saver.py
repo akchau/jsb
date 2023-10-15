@@ -1,4 +1,4 @@
-import os
+
 from core.json_manager import BaseJsonController, load_dict_in_json
 from core.file_manger import delete_file
 from api_client.yandex_shedule_client import request_shedule_from_rest_api
@@ -8,7 +8,7 @@ from shedule_manager.shedule_parser import ScheduleParser, parse_shedule
 
 
 def get_shedule_key(departure_station_code, arrived_station_code):
-    return  f"{departure_station_code}-{arrived_station_code}"
+    return f"{departure_station_code}-{arrived_station_code}"
 
 
 class ScheduleSaver(BaseJsonController):
