@@ -25,7 +25,7 @@ if __name__ == "__main__":
     command = "python " + " ".join(console_arguments)
     if console_arguments[0] == "c:\\dev\\j_bot\\main.py":
         logger.debug("Запуск приложения в DEBUG режиме.")
-        start_bot()
+        start_tests()
     elif len(console_arguments) == 1:
             print_help()
     elif len(console_arguments) == 2:

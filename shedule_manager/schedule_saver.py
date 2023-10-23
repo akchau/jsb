@@ -1,6 +1,5 @@
 
-from core.json_manager import BaseJsonController, load_dict_in_json
-from core.file_manger import delete_file
+from core.json_manager import BaseJsonController
 from api_client.yandex_shedule_client import request_shedule_from_rest_api
 from logger import logger
 import settings
@@ -17,8 +16,7 @@ class ScheduleSaver(BaseJsonController):
         return parse_shedule(data=data)
 
     def _save_schedule(self, key, data, filepath):
-        delete_file(filepath=filepath)
-        load_dict_in_json(
+        BaseJsonController.load_dict_in_json(
             filepath=filepath,
             data=data
         )
@@ -63,4 +61,3 @@ def refresh_schedule():
             departure_station_code=depatrure_station,
             arrived_station_code=arrived_station
         )
-

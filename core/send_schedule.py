@@ -1,5 +1,6 @@
-from core.json_manager import load_dict_in_json, read_json
+from core.json_manager import JsonManager
 from logger import logger
+
 
 class BaseDataConstructor:
 

@@ -5,7 +5,7 @@ class ScheduleParser:
 
     def __init__(self, data):
         self.data = self.parse_data(data)
-    
+
     def parse_data(self, data):
         result_data = {}
         segments = data["segments"]

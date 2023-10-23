@@ -1,5 +1,5 @@
 
-from core.json_manager import BaseJsonController, read_json
+from core.json_manager import BaseJsonController
 from shedule_manager.schedule_saver import get_shedule_key
 
 
@@ -11,7 +11,7 @@ class ScheduleGetter(BaseJsonController):
             filepath=self.LIST_OF_FILENAMES,
             key=key
         )
-        return read_json(filepath=filepath)
+        return BaseJsonController.read_json(filepath=filepath)
 
 def get_current_shedule(departure_station_code, arrived_station_code):
     return ScheduleGetter().get_shedule(departure_station_code, arrived_station_code)
