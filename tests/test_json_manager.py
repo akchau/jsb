@@ -4,7 +4,7 @@ import os
 import shutil
 import unittest
 
-from core.json_manager import JsonManager
+from core.json_manager.json_manager import JsonManager
 from core.json_manager import json_exceptions
 
 MODULE_PATH = os.path.abspath(__file__)

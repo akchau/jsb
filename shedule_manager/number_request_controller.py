@@ -1,4 +1,4 @@
-from core.json_manager import BaseJsonController
+from core.json_manager.json_manager import BaseJsonController
 from logger import logger
 import settings
 

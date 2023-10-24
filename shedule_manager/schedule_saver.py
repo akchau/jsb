@@ -1,5 +1,5 @@
 
-from core.json_manager import BaseJsonController
+from core.json_manager.json_manager import BaseJsonController
 from api_client.yandex_shedule_client import request_shedule_from_rest_api
 from logger import logger
 import settings

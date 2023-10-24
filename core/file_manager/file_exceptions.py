@@ -18,9 +18,3 @@ class NotSuccessDeleteFileEntity(FileException):
     """Исключение, если после удаления файл все еще существует."""
     def __init__(self, message="Не удалось удалить файл."):
         super().__init__(message)
-
-
-class OpenedFileDeleteEntity(FileException):
-    """Исключение, если после удаления файл все еще существует."""
-    def __init__(self, message="Не удалось удалить файл."):
-        super().__init__(message)

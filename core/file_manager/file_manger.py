@@ -1,7 +1,6 @@
 import os
-from typing import Union
 
-from core import exceptions as file_exceptions
+from . import file_exceptions
 
 
 class FileManager:

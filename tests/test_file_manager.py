@@ -3,8 +3,8 @@ import os
 import shutil
 import unittest
 
-from core import exceptions as file_exceptions
-from core.file_manger import FileManager
+from core.file_manager.file_manger import FileManager
+from core.file_manager import file_exceptions
 
 MODULE_PATH = os.path.abspath(__file__)
 TEMP_FIXTURE_DIRPATH = os.path.join(

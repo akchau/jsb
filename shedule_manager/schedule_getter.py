@@ -1,5 +1,5 @@
 
-from core.json_manager import BaseJsonController
+from core.json_manager.json_manager import BaseJsonController
 from shedule_manager.schedule_saver import get_shedule_key
 
 

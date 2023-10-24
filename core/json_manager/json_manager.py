@@ -2,8 +2,8 @@ import json
 import os
 import fcntl
 
-from core.file_manger import FileManager
-from core.json_manger import json_exceptions
+from ..file_manager.file_manger import FileManager
+from .import json_exceptions
 
 
 class JsonManager(FileManager):
