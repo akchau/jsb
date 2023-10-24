@@ -11,17 +11,17 @@ class FileManager:
 
         Args:
 
-            filepath (str): Путь проверяемого файла.
+            filepath (str): Путь проверяемого объекта.
 
         Returns:
             bool: Ответ, лежит ли по указанному пути файл.
 
         Raises:
-            file_exceptions.NoPathEntity: Ошибка, если передан не путь файла.
+            file_exceptions.NoPathEntity: Ошибка, если передан не путь.
         """
         if isinstance(filepath, str):
             return os.path.isfile(filepath)
-        raise file_exceptions.NoPathEntity
+        raise file_exceptions.NoPathEntity(value=filepath)
 
     def delete_file(self, filepath: str) -> None:
         """
@@ -29,7 +29,7 @@ class FileManager:
 
         Args:
 
-            - filepath (str): Путь удаялемого файла.
+            - filepath (str): Путь удаляемого файла.
 
         Raises:
             file_exceptions.NotSuccessDeleteFileEntity: Ошибка,
@@ -40,6 +40,8 @@ class FileManager:
         if self.object_is_file(filepath=filepath):
             os.remove(filepath)
             if self.object_is_file(filepath=filepath):
-                raise file_exceptions.NotSuccessDeleteFileEntity
+                raise file_exceptions.NotSuccessDeleteObjectEntity(
+                    path=filepath
+                )
         else:
-            raise file_exceptions.DeleteNotExistFileEntity
+            raise file_exceptions.DeleteNotExistObjectEntity(path=filepath)

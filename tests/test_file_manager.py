@@ -102,11 +102,12 @@ class TestObjectIsFile(unittest.TestCase):
 
         - Целое число.
         """
-        self.assertRaises(
-            file_exceptions.NoPathEntity,
-            self.fm.object_is_file,
-            self.__NUMBER
-        )
+        with self.assertRaises(file_exceptions.NoPathEntity) as context:
+            self.fm.object_is_file(filepath=self.__NUMBER)
+            self.assertEqual(
+                context,
+                f"Переданное значение не является путем - {self.__NUMBER}"
+            )
 
     def test_with_dict(self):
         """
@@ -118,11 +119,12 @@ class TestObjectIsFile(unittest.TestCase):
 
         - Словарь.
         """
-        self.assertRaises(
-            file_exceptions.NoPathEntity,
-            self.fm.object_is_file,
-            self.__DICT
-        )
+        with self.assertRaises(file_exceptions.NoPathEntity) as context:
+            self.fm.object_is_file(filepath=self.__DICT)
+            self.assertEqual(
+                context,
+                f"Переданное значение не является путем - {self.__DICT}"
+            )
 
     def test_with_tuple(self):
         """
@@ -134,11 +136,12 @@ class TestObjectIsFile(unittest.TestCase):
 
         - Кортеж.
         """
-        self.assertRaises(
-            file_exceptions.NoPathEntity,
-            self.fm.object_is_file,
-            self.__TUPLE
-        )
+        with self.assertRaises(file_exceptions.NoPathEntity) as context:
+            self.fm.object_is_file(filepath=self.__TUPLE)
+            self.assertEqual(
+                context,
+                f"Переданное значение не является путем - {self.__TUPLE}"
+            )
 
     def test_with_list(self):
         """
@@ -150,11 +153,12 @@ class TestObjectIsFile(unittest.TestCase):
 
         - Список.
         """
-        self.assertRaises(
-            file_exceptions.NoPathEntity,
-            self.fm.object_is_file,
-            self.__LIST
-        )
+        with self.assertRaises(file_exceptions.NoPathEntity) as context:
+            self.fm.object_is_file(filepath=self.__LIST)
+            self.assertEqual(
+                context,
+                f"Переданное значение не является путем - {self.__LIST}"
+            )
 
     def test_with_class(self):
         """
@@ -198,11 +202,12 @@ class TestObjectIsFile(unittest.TestCase):
 
         - Объект класса.
         """
-        self.assertRaises(
-            file_exceptions.NoPathEntity,
-            self.fm.object_is_file,
-            None
-        )
+        with self.assertRaises(file_exceptions.NoPathEntity) as context:
+            self.fm.object_is_file(filepath=None)
+            self.assertEqual(
+                context,
+                f"Переданное значение не является путем - {None}"
+            )
 
 
 class TestDeleteFile(unittest.TestCase):
@@ -234,11 +239,14 @@ class TestDeleteFile(unittest.TestCase):
 
         - Несуществующий файл.
         """
-        self.assertRaises(
-            file_exceptions.DeleteNotExistFileEntity,
-            self.fm.delete_file,
-            self.FILEPATH
-        )
+        with self.assertRaises(
+           file_exceptions.DeleteNotExistObjectEntity) as context:
+            self.fm.delete_file(
+                filepath=self.FILEPATH
+            )
+            self.assertEqual(
+                context,
+                f"Попытка удаления несуществующего объекта - {self.FILEPATH}")
 
     def test_with_exist_file(self):
         """
