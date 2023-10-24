@@ -59,10 +59,32 @@ class EmptyJsonEntity(JsonFileException):
 
 class NotPermissionForReadEntity(JsonFileException):
     """
+    Исключение, если недостаточно прав на чтение json-файла.
+    """
+    def __init__(
+        self,
+        message="Недостаточно прав на чтение json-файла."
+    ):
+        super().__init__(message)
+
+
+class AnotherProcessLockFileEntity(JsonFileException):
+    """
     Исключение, если json-файл пустой.
     """
     def __init__(
         self,
-        message="Открываемый json-файл пустой."
+        message="Другой процесс заблокировал работу с файлом."
+    ):
+        super().__init__(message)
+
+
+class NotPermissionForWriteEntity(JsonFileException):
+    """
+    Исключение, если недостаточно прав на запись в json-файл.
+    """
+    def __init__(
+        self,
+        message="Недостаточно прав на запись в json-файл."
     ):
         super().__init__(message)

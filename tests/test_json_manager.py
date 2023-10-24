@@ -126,7 +126,7 @@ class TestReadJson(unittest.TestCase):
             json.dump(self.DICT_DATA, new_json, indent=4, ensure_ascii=False)
 
         self.assertEqual(
-            self.jm.read_json(self.JSON_FILEPATH),
+            self.jm._read_json(self.JSON_FILEPATH),
             self.DICT_DATA
         )
 
@@ -146,7 +146,7 @@ class TestReadJson(unittest.TestCase):
             json.dump(self.LIST_DATA, new_json, indent=4, ensure_ascii=False)
 
         self.assertEqual(
-            self.jm.read_json(self.JSON_FILEPATH),
+            self.jm._read_json(self.JSON_FILEPATH),
             self.LIST_DATA
         )
 
@@ -167,7 +167,7 @@ class TestReadJson(unittest.TestCase):
         os.chmod(self.JSON_FILEPATH, 0o222)
         self.assertRaises(
             json_exceptions.NotPermissionForReadEntity,
-            self.jm.read_json,
+            self.jm._read_json,
             self.JSON_FILEPATH
         )
 
@@ -188,7 +188,7 @@ class TestReadJson(unittest.TestCase):
 
         os.chmod(self.JSON_FILEPATH, 0o444)
         self.assertEqual(
-            self.jm.read_json(self.JSON_FILEPATH),
+            self.jm._read_json(self.JSON_FILEPATH),
             self.DICT_DATA
         )
 
@@ -196,7 +196,7 @@ class TestReadJson(unittest.TestCase):
         with open(file=self.JSON_FILEPATH, mode="w", encoding='utf-8'):
             pass
         with self.assertRaises(json_exceptions.EmptyJsonEntity) as context:
-            self.jm.read_json(filepath=self.JSON_FILEPATH)
+            self.jm._read_json(filepath=self.JSON_FILEPATH)
         self.assertEqual(str(context.exception), "Открываемый json-файл пустой.")
 
 
@@ -231,7 +231,7 @@ class TestLoadDataInJson(unittest.TestCase):
         with open(file=self.JSON_FILEPATH, mode="w", encoding='utf-8'):
             pass
 
-        self.jm.load_data_in_json(
+        self.jm._load_data_in_json(
             filepath=self.JSON_FILEPATH,
             data=self.DICT_DATA
         )
@@ -245,7 +245,7 @@ class TestLoadDataInJson(unittest.TestCase):
         )
 
     def test_with_dict_with_not_exist_file(self):
-        self.jm.load_data_in_json(
+        self.jm._load_data_in_json(
             filepath=self.JSON_FILEPATH,
             data=self.DICT_DATA
         )
@@ -264,7 +264,7 @@ class TestLoadDataInJson(unittest.TestCase):
 
         self.assertRaises(
             json_exceptions.AlreadyExistNotJsonEntity,
-            self.jm.load_data_in_json,
+            self.jm._load_data_in_json,
             self.TEXT_FILEPATH,
             self.DICT_DATA
         )
@@ -273,7 +273,7 @@ class TestLoadDataInJson(unittest.TestCase):
         with open(file=self.JSON_FILEPATH, mode="w", encoding='utf-8'):
             pass
 
-        self.jm.load_data_in_json(
+        self.jm._load_data_in_json(
             filepath=self.JSON_FILEPATH,
             data=self.LIST_DATA
         )
@@ -284,4 +284,18 @@ class TestLoadDataInJson(unittest.TestCase):
         self.assertEqual(
             data,
             self.LIST_DATA
+        )
+
+    def test_without_write_permission(self):
+        with open(file=self.JSON_FILEPATH, mode="w", encoding='utf-8'):
+            pass
+        os.chmod(self.JSON_FILEPATH, 0o444)
+        with self.assertRaises(json_exceptions.NotPermissionForWriteEntity) as context:
+            self.jm._load_data_in_json(
+                filepath=self.JSON_FILEPATH,
+                data=self.LIST_DATA
+            )
+        self.assertEqual(
+            str(context.exception),
+            "Недостаточно прав на запись в json-файл."
         )

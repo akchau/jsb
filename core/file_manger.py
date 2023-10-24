@@ -15,23 +15,28 @@ class FileManager:
             filepath (str): Путь проверяемого файла.
 
         Returns:
+            bool: Ответ, лежит ли по указанному пути файл.
 
-            str: Ответ на вопрос, лежит ли по указанному пути файл.
+        Raises:
+            file_exceptions.NoPathEntity: Ошибка, если передан не путь файла.
         """
         if isinstance(filepath, str):
             return os.path.isfile(filepath)
         raise file_exceptions.NoPathEntity
 
-    def delete_file(self, filepath: str) -> Union[str, None]:
+    def delete_file(self, filepath: str) -> None:
         """
         Утилита которая удаляет файл.
 
         Args:
 
             - filepath (str): Путь удаялемого файла.
-        Returns:
 
-            - Union[str, None]: Если файл удален - путь файла, или None.
+        Raises:
+            file_exceptions.NotSuccessDeleteFileEntity: Ошибка,
+                если после удаления файл существует.
+            file_exceptions.DeleteNotExistFileEntity: Ошибка,
+                если такого файла не существует.
         """
         if self.object_is_file(filepath=filepath):
             os.remove(filepath)
