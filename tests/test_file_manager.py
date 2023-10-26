@@ -3,7 +3,7 @@ import os
 import shutil
 import unittest
 
-from core.file_manager.file_manger import FileManager
+from core.file_manager.file_manager import FileManager
 from core.file_manager import file_exceptions
 
 MODULE_PATH = os.path.abspath(__file__)
@@ -105,7 +105,7 @@ class TestObjectIsFile(unittest.TestCase):
         with self.assertRaises(file_exceptions.NoPathEntity) as context:
             self.fm.object_is_file(filepath=self.__NUMBER)
             self.assertEqual(
-                context,
+                context.exception,
                 f"Переданное значение не является путем - {self.__NUMBER}"
             )
 
@@ -122,7 +122,7 @@ class TestObjectIsFile(unittest.TestCase):
         with self.assertRaises(file_exceptions.NoPathEntity) as context:
             self.fm.object_is_file(filepath=self.__DICT)
             self.assertEqual(
-                context,
+                context.exception,
                 f"Переданное значение не является путем - {self.__DICT}"
             )
 
@@ -139,7 +139,7 @@ class TestObjectIsFile(unittest.TestCase):
         with self.assertRaises(file_exceptions.NoPathEntity) as context:
             self.fm.object_is_file(filepath=self.__TUPLE)
             self.assertEqual(
-                context,
+                context.exception,
                 f"Переданное значение не является путем - {self.__TUPLE}"
             )
 
@@ -156,7 +156,7 @@ class TestObjectIsFile(unittest.TestCase):
         with self.assertRaises(file_exceptions.NoPathEntity) as context:
             self.fm.object_is_file(filepath=self.__LIST)
             self.assertEqual(
-                context,
+                context.exception,
                 f"Переданное значение не является путем - {self.__LIST}"
             )
 
@@ -205,7 +205,7 @@ class TestObjectIsFile(unittest.TestCase):
         with self.assertRaises(file_exceptions.NoPathEntity) as context:
             self.fm.object_is_file(filepath=None)
             self.assertEqual(
-                context,
+                context.exception,
                 f"Переданное значение не является путем - {None}"
             )
 
@@ -245,7 +245,7 @@ class TestDeleteFile(unittest.TestCase):
                 filepath=self.FILEPATH
             )
             self.assertEqual(
-                context,
+                context.exception,
                 f"Попытка удаления несуществующего объекта - {self.FILEPATH}")
 
     def test_with_exist_file(self):
@@ -264,7 +264,7 @@ class TestDeleteFile(unittest.TestCase):
         self.fm.delete_file(self.FILEPATH)
         self.assertFalse(self.fm.object_is_file(self.FILEPATH))
 
-    def test_with_exist_already_open_file(self):
+    def test_without_rights_file(self):
         """
         Тестируемая функция:
 
@@ -276,7 +276,44 @@ class TestDeleteFile(unittest.TestCase):
         """
         with open(self.FILEPATH, 'w+'):
             pass
-        os.chmod(self.FILEPATH, 0o222)
+        os.chmod(self.FILEPATH, 0o000)
         self.assertTrue(os.path.isfile(self.FILEPATH))
         self.fm.delete_file(self.FILEPATH)
         self.assertFalse(os.path.isfile(self.FILEPATH))
+
+
+class TestWriteToNewFile(unittest.TestCase):
+    __FILENAME = "exist.txt"
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.FILEPATH = os.path.join(
+            TEMP_FIXTURE_DIRPATH,
+            cls.__FILENAME
+        )
+
+    def setUp(self) -> None:
+        """Создание папки для тестов __fixtures__."""
+        os.mkdir(TEMP_FIXTURE_DIRPATH)
+        self.fm = FileManager()
+
+    def tearDown(self) -> None:
+        """Удаление папки для тестов __fixtures__."""
+        shutil.rmtree(TEMP_FIXTURE_DIRPATH)
+
+    def test_write_to_not_exist_file(self):
+        self.fm.write_to_new_file_text(self.FILEPATH, "Тестовый текст")
+
+    def test_write_to_exist_file(self):
+        with open(self.FILEPATH, 'w+'):
+            pass
+        with self.assertRaises(
+           file_exceptions.FileAlreadyExistEntity) as context:
+            self.fm.write_to_new_file_text(
+                filepath=self.FILEPATH,
+                data="Тестовый текст"
+            )
+            self.assertEqual(
+                context.exception,
+                f"Такой файл уже существует - {self.FILEPATH}",
+            )

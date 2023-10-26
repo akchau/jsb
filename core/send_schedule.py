@@ -1,4 +1,4 @@
-from core.json_manager.json_manager import JsonManager
+from core.json_manager.json_manager import JsonFileManager
 from logger import logger
 
 

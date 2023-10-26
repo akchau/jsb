@@ -4,14 +4,17 @@ class JsonFileException(Exception):
     """
 
 
-class NotJsonEntity(JsonFileException):
+class NotJsonPathEntity(JsonFileException):
     """
-    Исключение, если передано не значение пути в файл.
+    Исключение, если передано не значение пути json-файла.
     """
-    def __init__(self, message="Данный файл не является JSON-файлом."):
-        super().__init__(message)
+    def __init__(self, value,
+                 message="Путь {value} является путем JSON-файла."):
+        formatted_message = message.format(value=value)
+        super().__init__(formatted_message)
 
 
+# ?
 class OpenedJsonReadEntity(JsonFileException):
     """
     Исключение, если передано не значение пути в файл.
@@ -23,16 +26,31 @@ class OpenedJsonReadEntity(JsonFileException):
         super().__init__(message)
 
 
-class AlreadyExistNotJsonEntity(JsonFileException):
+class AlreadyExistEntity(JsonFileException):
     """
-    Исключение, если при загрузке
-    данных в файл уже существует такой файл.
+    Исключение, если при создании нового json-файла
+    уже существует такой файл.
     """
     def __init__(
         self,
-        message="Файл с таким именем уже существует."
+        path,
+        message="Файл {path} уже существует."
     ):
-        super().__init__(message)
+        formatted_message = message.format(path=path)
+        super().__init__(formatted_message)
+
+
+class NotExistEntity(JsonFileException):
+    """
+    Исключение, такого json-файла не существует.
+    """
+    def __init__(
+        self,
+        path,
+        message="Файла {path} не существует."
+    ):
+        formatted_message = message.format(path=path)
+        super().__init__(formatted_message)
 
 
 class DataIsNotDictEntity(JsonFileException):
@@ -41,9 +59,17 @@ class DataIsNotDictEntity(JsonFileException):
     """
     def __init__(
         self,
-        message="Попытка загрузить не словарь в json-файл."
+        path,
+        data,
+        message="Полученные или загружаемые данные {data} в/из файл {path} имеют тип {data_type} а не слоарь. ."
     ):
-        super().__init__(message)
+        data_type = type(data)
+        formatted_message = message.format(
+            data=data,
+            path=path,
+            data_type=data_type
+        )
+        super().__init__(formatted_message)
 
 
 class EmptyJsonEntity(JsonFileException):
@@ -52,9 +78,11 @@ class EmptyJsonEntity(JsonFileException):
     """
     def __init__(
         self,
-        message="Открываемый json-файл пустой."
+        path,
+        message="Json-файл {path} пустой, невозможно прочитать."
     ):
-        super().__init__(message)
+        formatted_message = message.format(path=path)
+        super().__init__(formatted_message)
 
 
 class NotPermissionForReadEntity(JsonFileException):
@@ -70,11 +98,11 @@ class NotPermissionForReadEntity(JsonFileException):
 
 class AnotherProcessLockFileEntity(JsonFileException):
     """
-    Исключение, если json-файл пустой.
+    Исключение, если другой процесс заблокировал открытие json-файла.
     """
     def __init__(
         self,
-        message="Другой процесс заблокировал работу с файлом."
+        message="Другой процесс заблокировал работу с json-файлом."
     ):
         super().__init__(message)
 
@@ -88,3 +116,29 @@ class NotPermissionForWriteEntity(JsonFileException):
         message="Недостаточно прав на запись в json-файл."
     ):
         super().__init__(message)
+
+
+class KeyNotExistInJsonDict(JsonFileException):
+    """
+    Исключение, если при парсинге json-файла произошла
+        ошибка - несуществующий ключ.
+    """
+    def __init__(self, path, key,
+                 message="В файле {path} не существует ключа {key}."):
+        formatted_message = message.format(path=path, key=key)
+        super().__init__(formatted_message)
+
+
+class NotValideTypeForKey(JsonFileException):
+    """
+    Исключение когда передан типа данных, который не может быть ключом словаря.
+
+    Args:
+        JsonFileException (_type_): _description_
+    """
+    def __init__(self, value,
+                 message=("Значение {value} имеет тип {type} и"
+                          " не может быть ключом словаря.")):
+        invalid_type = type(value)
+        formatted_message = message.format(value=value, type=invalid_type)
+        super().__init__(formatted_message)

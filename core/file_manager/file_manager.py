@@ -45,3 +45,17 @@ class FileManager:
                 )
         else:
             raise file_exceptions.DeleteNotExistObjectEntity(path=filepath)
+
+    def file_not_exist(self, filepath):
+        if self.object_is_file(filepath=filepath):
+            raise file_exceptions.FileAlreadyExistEntity(path=filepath)
+
+    def write_to_new_file_text(self, filepath, data):
+        self.file_not_exist(filepath=filepath)
+        with open(file=filepath, mode='w') as f:
+            f.write(data)
+
+    def write_to_new_file_binary(self, filepath, data):
+        self.file_not_exist(filepath=filepath)
+        with open(file=filepath, mode='wb') as f:
+            f.write(data)

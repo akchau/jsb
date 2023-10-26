@@ -2,16 +2,29 @@ import json
 import os
 import fcntl
 
-from ..file_manager.file_manger import FileManager
+from ..file_manager.file_manager import FileManager
 from .import json_exceptions
 
 
-class JsonManager(FileManager):
+class JsonFileManager(FileManager):
 
-    def __init__(self):
-        self.lockfile = "lockfile" + ".lock"
+    def __init__(self, filepath):
+        self.__lockfile = "lockfile" + ".lock"
+        self.filepath = filepath
 
-    def object_is_json_file(self, filepath: str) -> bool:
+    @property
+    def filepath(self):
+        return self._filepath
+
+    @filepath.setter
+    def filepath(self, value):
+        """Сеттер для пути json-файла"""
+        if isinstance(value, str) and value.endswith(".json"):
+            self._filepath = value
+        else:
+            raise json_exceptions.NotJsonPathEntity(value=value)
+
+    def _json_file_exist(self) -> bool:
         """
         Утилита которая проверяется, является ли объект json-файлом.
 
@@ -21,23 +34,35 @@ class JsonManager(FileManager):
         Returns:
             bool: Ответ.
         """
-        if self.object_is_file(filepath=filepath) and filepath.endswith(".json"):
+        if self.object_is_file(filepath=self.filepath):
             return True
         else:
             return False
 
-    def acquire_lock(self):
+    def _acquire_lock(self):
         try:
-            self.lock_fd = open(self.lockfile, 'w')
+            self.lock_fd = open(self.__lockfile, 'w')
             fcntl.flock(self.lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except (OSError, IOError):
             raise json_exceptions.AnotherProcessLockFileEntity
 
-    def release_lock(self):
+    def _release_lock(self):
         fcntl.flock(self.lock_fd, fcntl.LOCK_UN)
         self.lock_fd.close()
 
-    def _load_data_in_json(self, filepath: str, data) -> None:
+    def _overwrite_data_in_json(self, data) -> None:
+        if self._json_file_exist():
+            self._load_data_in_json(data=data)
+        else:
+            raise json_exceptions.NotExistEntity(path=self.filepath)
+
+    def _create_new_json_with_data(self, data) -> None:
+        if not self._json_file_exist():
+            self._load_data_in_json(data=data)
+        else:
+            raise json_exceptions.AlreadyExistEntity(path=self.filepath)
+
+    def _load_data_in_json(self, data) -> None:
         """
         Утилита, которая загружает в json-файл словарь.
 
@@ -47,29 +72,17 @@ class JsonManager(FileManager):
 
             - data (dict): Словарь.
         """
-        if (self.object_is_json_file(filepath=filepath) or not
-           self.object_is_file(filepath=filepath)):
-            try:
-                self.acquire_lock()
-                with open(file=filepath, mode="w", encoding='utf-8') as new_json:
-                    json.dump(data, new_json, indent=4, ensure_ascii=False)
-            except PermissionError:
-                raise json_exceptions.NotPermissionForWriteEntity
-            finally:
-                self.release_lock()
-        else:
-            raise json_exceptions.AlreadyExistNotJsonEntity
+        try:
+            self._acquire_lock()
+            with open(file=self.filepath, mode="w",
+                      encoding='utf-8') as new_json:
+                json.dump(data, new_json, indent=4, ensure_ascii=False)
+        except PermissionError:
+            raise json_exceptions.NotPermissionForWriteEntity
+        finally:
+            self._release_lock()
 
-    def load_dict_in_json(self, filepath: str, data: dict):
-        if isinstance(data, dict):
-            self._load_data_in_json(
-                filepath=filepath,
-                data=data
-            )
-        else:
-            raise json_exceptions.DataIsNotDictEntity
-
-    def _read_json(self, filepath: str) -> dict:
+    def _read_json(self) -> dict:
         """
         Утилита которая возвращает содержимое json-файла.
 
@@ -85,32 +98,70 @@ class JsonManager(FileManager):
         Returns:
             dict: Содержимое json-файла.
         """
-        if self.object_is_json_file(filepath=filepath):
+        if self._json_file_exist():
             try:
-                self.acquire_lock()
-                with open(file=filepath, mode='r',
+                self._acquire_lock()
+                with open(file=self.filepath, mode='r',
                           encoding='utf-8') as json_file:
                     data = json.load(json_file)
                 return data
             except json.decoder.JSONDecodeError:
-                if os.stat(filepath).st_size == 0:
-                    raise json_exceptions.EmptyJsonEntity
+                if os.stat(self.filepath).st_size == 0:
+                    raise json_exceptions.EmptyJsonEntity(path=self.filepath)
             except PermissionError:
                 raise json_exceptions.NotPermissionForReadEntity
             finally:
-                self.release_lock()
+                self._release_lock()
         else:
-            raise json_exceptions.NotJsonEntity
+            raise json_exceptions.NotExistEntity(path=self.filepath)
 
-    def read_dict_in_json(self, filepath: str) -> dict:
-        data = self._read_json(filepath=filepath)
+    def _overwrite_dict_in_json(self, data: dict):
+        if isinstance(data, dict):
+            self._overwrite_data_in_json(
+                data=data
+            )
+        else:
+            raise json_exceptions.DataIsNotDictEntity(
+                path=self.filepath,
+                data=data
+            )
+
+    def _read_dict_from_json(self) -> dict:
+        data = self._read_json()
         if isinstance(data, dict):
             return data
         else:
-            raise json_exceptions.DataIsNotDictEntity
+            raise json_exceptions.DataIsNotDictEntity(
+                path=self.filepath,
+                data=data
+            )
+
+    def _check_keys_tuple(self, keys: tuple) -> None:
+        for dict_key in keys:
+            if not isinstance(dict_key, (int, str, tuple, frozenset)):
+                raise json_exceptions.NotValideTypeForKey(value=dict_key)
+
+    def _read_dict_record_from_json(self, keys: tuple):
+        json_data_dict = self._read_dict_from_json()
+        self.check_keys_tuple(keys=keys)
+        result = json_data_dict
+        for dict_key in keys:
+            try:
+                result = result[dict_key]
+            except KeyError:
+                raise json_exceptions.KeyNotExistInJsonDict(
+                    path=self.filepath,
+                    key=dict_key
+                )
+        return result
 
 
-class BaseJsonController(JsonManager):
+# class JsonDB(JsonFileManager):
+
+
+
+
+class BaseJsonController(JsonFileManager):
 
     LIST_OF_FILENAMES = "data/system/shedule_cache/list_of_filenames.json"
     BASE_SCHEDULE_PATH = "data/system/shedule_cache/objects"

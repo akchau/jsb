@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from . import file_exceptions
 
@@ -38,8 +39,8 @@ class DirManager:
                 если такой директории не существует.
         """
         if self.object_is_dir(dirpath=dirpath):
-            os.remove(dirpath)
-            if self.object_is_file(dirpath=dirpath):
+            shutil.rmtree(path=dirpath)
+            if self.object_is_dir(dirpath=dirpath):
                 raise file_exceptions.NotSuccessDeleteObjectEntity(
                     path=dirpath
                 )
