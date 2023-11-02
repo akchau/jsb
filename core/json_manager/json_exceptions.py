@@ -132,9 +132,6 @@ class KeyNotExistInJsonDict(JsonFileException):
 class NotValideTypeForKey(JsonFileException):
     """
     Исключение когда передан типа данных, который не может быть ключом словаря.
-
-    Args:
-        JsonFileException (_type_): _description_
     """
     def __init__(self, value,
                  message=("Значение {value} имеет тип {type} и"
@@ -142,3 +139,11 @@ class NotValideTypeForKey(JsonFileException):
         invalid_type = type(value)
         formatted_message = message.format(value=value, type=invalid_type)
         super().__init__(formatted_message)
+
+
+class KeyTupleIsEmpty(JsonFileException):
+    """
+    Исключение когда передан пустой кортеж ключей.
+    """
+    def __init__(self, message="Передан пустой кортеж ключей словаря."):
+        super().__init__(message)

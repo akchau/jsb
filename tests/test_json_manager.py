@@ -347,52 +347,113 @@ class TestReadDictFromJson(unittest.TestCase):
 #             )
 
 
-# class TestReadDictRecordFromJson(unittest.TestCase):
+class TestReadDictRecordFromJson(unittest.TestCase):
 
-#     __JSON_FILENAME = "exist.json"
-#     EXIST_KEY_1_LVL = "exits_key_1"
-#     EXIST_KEY_2_LVL = "exits_key_2"
-#     EXIST_VALUE = "value_1"
-#     NOT_EXIST_KEY = "exits_key_3"
-#     TEST_DATA = {
-#         EXIST_KEY_1_LVL: {
-#             EXIST_KEY_2_LVL: EXIST_VALUE
-#         }
-#     }
+    __JSON_FILENAME = "exist.json"
+    EXIST_KEY_1_LVL = "exits_key_1"
+    EXIST_KEY_2_LVL = "exits_key_2"
+    EXIST_VALUE = "value_1"
+    NOT_EXIST_KEY = "exits_key_3"
+    TEST_DATA = {
+        EXIST_KEY_1_LVL: {
+            EXIST_KEY_2_LVL: EXIST_VALUE
+        }
+    }
 
-#     @classmethod
-#     def setUpClass(cls) -> None:
-#         cls.JSON_FILEPATH = os.path.join(
-#             TEMP_FIXTURE_DIRPATH,
-#             cls.__JSON_FILENAME
-#         )
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.JSON_FILEPATH = os.path.join(
+            TEMP_FIXTURE_DIRPATH,
+            cls.__JSON_FILENAME
+        )
 
-#     def setUp(self) -> None:
-#         """Создание папки для тестов __fixtures__."""
-#         os.mkdir(TEMP_FIXTURE_DIRPATH)
-#         self.jm = JsonManager()
-#         with open(file=self.JSON_FILEPATH, mode="w") as json_file:
-#             json.dump(self.TEST_DATA, json_file, indent=4, ensure_ascii=False)
+    def setUp(self) -> None:
+        """Создание папки для тестов __fixtures__."""
+        os.mkdir(TEMP_FIXTURE_DIRPATH)
+        self.jm = JsonFileManager(filepath=self.JSON_FILEPATH)
+        with open(file=self.JSON_FILEPATH, mode="w") as json_file:
+            json.dump(self.TEST_DATA, json_file, indent=4, ensure_ascii=False)
 
-#     def tearDown(self) -> None:
-#         """Удаление папки для тестов __fixtures__."""
-#         shutil.rmtree(TEMP_FIXTURE_DIRPATH)
+    def tearDown(self) -> None:
+        """Удаление папки для тестов __fixtures__."""
+        shutil.rmtree(TEMP_FIXTURE_DIRPATH)
 
-#     def test_with_exist_key(self):
-#         value = self.jm.read_dict_record_from_json(
-#             filepath=self.JSON_FILEPATH,
-#             keys=(self.EXIST_KEY_1_LVL, self.EXIST_KEY_2_LVL)
-#         )
-#         self.assertEqual(value, self.EXIST_VALUE)
+    def test_with_exist_key(self):
+        value = self.jm._read_dict_record_from_json(
+            keys=(self.EXIST_KEY_1_LVL, self.EXIST_KEY_2_LVL)
+        )
+        self.assertEqual(value, self.EXIST_VALUE)
 
-#     def test_with_not_exist_key(self):
-#         with self.assertRaises(json_exceptions.KeyNotExistInJsonDict) as context:
-#             self.jm.read_dict_record_from_json(
-#                 filepath=self.JSON_FILEPATH,
-#                 keys=(self.EXIST_KEY_1_LVL, self.NOT_EXIST_KEY)
-#             )
-#             self.assertEqual(
-#                 context.exception,
-#                 (f"В файле {self.JSON_FILEPATH} не существует "
-#                  "ключа {self.NOT_EXIST_KEY}.")
-#             )
+    def test_with_not_exist_key(self):
+        with self.assertRaises(json_exceptions.KeyNotExistInJsonDict) as context:
+            self.jm._read_dict_record_from_json(
+                keys=(self.EXIST_KEY_1_LVL, self.NOT_EXIST_KEY)
+            )
+            self.assertEqual(
+                context.exception,
+                (f"В файле {self.JSON_FILEPATH} не существует "
+                 "ключа {self.NOT_EXIST_KEY}.")
+            )
+
+
+class TestCheckKeysTuple(unittest.TestCase):
+    __JSON_FILENAME = "exist.json"
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.JSON_FILEPATH = os.path.join(
+            TEMP_FIXTURE_DIRPATH,
+            cls.__JSON_FILENAME
+        )
+
+    def setUp(self) -> None:
+        """Создание папки для тестов __fixtures__."""
+        os.mkdir(TEMP_FIXTURE_DIRPATH)
+        self.jm = JsonFileManager(filepath=self.JSON_FILEPATH)
+
+    def tearDown(self) -> None:
+        """Удаление папки для тестов __fixtures__."""
+        shutil.rmtree(TEMP_FIXTURE_DIRPATH)
+
+    def test_with_correct_keys(self):
+        correct_keys_tuple = ("key1", "key2", "key3")
+        try:
+            self.jm._check_keys_tuple(keys=correct_keys_tuple)
+        except Exception as e:
+            self.fail(f"Функция вернула исключение {e}, а не должна была.")
+
+    def test_with_empty_keys(self):
+        correct_keys_tuple = ("key1", "", "key3")
+
+        try:
+            self.jm._check_keys_tuple(keys=correct_keys_tuple)
+        except Exception as e:
+            self.fail(f"Функция вернула исключение {e}, а не должна была.")
+
+        data = {
+            "key1": {
+                "": {
+                    "key3": "value1"
+                }
+            }
+        }
+        with open(file=self.JSON_FILEPATH, mode="w") as json_file:
+            json.dump(data, json_file, indent=4, ensure_ascii=False)
+
+        result = self.jm._read_dict_record_from_json(correct_keys_tuple)
+        self.assertEqual(result, "value1")
+
+    def test_with_empty_tuple(self):
+        empty_keys_tuple = ()
+        with self.assertRaises(json_exceptions.KeyTupleIsEmpty) as context:
+            self.jm._check_keys_tuple(keys=empty_keys_tuple)
+            self.assertEqual(context, "Передан пустой кортеж ключей словаря.")
+
+    def test_with_incorrect_keys(self):
+        incorrect_keys_tuple = ("key1", [1, 3, 5, 6], "key3")
+        with self.assertRaises(json_exceptions.NotValideTypeForKey) as context:
+            self.jm._check_keys_tuple(keys=incorrect_keys_tuple)
+            self.assertEqual(
+                context,
+                (f"Значение [1, 3, 5, 6] имеет тип "
+                 f"{type([1, 3, 5, 6])} и не может быть ключом словаря."))

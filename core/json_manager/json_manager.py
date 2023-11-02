@@ -24,6 +24,7 @@ class JsonFileManager(FileManager):
         else:
             raise json_exceptions.NotJsonPathEntity(value=value)
 
+    # Протестировано
     def _json_file_exist(self) -> bool:
         """
         Утилита которая проверяется, является ли объект json-файлом.
@@ -82,6 +83,7 @@ class JsonFileManager(FileManager):
         finally:
             self._release_lock()
 
+    # Протестировано
     def _read_json(self) -> dict:
         """
         Утилита которая возвращает содержимое json-файла.
@@ -126,6 +128,7 @@ class JsonFileManager(FileManager):
                 data=data
             )
 
+    # Протестировано
     def _read_dict_from_json(self) -> dict:
         data = self._read_json()
         if isinstance(data, dict):
@@ -137,13 +140,17 @@ class JsonFileManager(FileManager):
             )
 
     def _check_keys_tuple(self, keys: tuple) -> None:
+        if len(keys) == 0:
+            raise json_exceptions.KeyTupleIsEmpty
+
         for dict_key in keys:
             if not isinstance(dict_key, (int, str, tuple, frozenset)):
                 raise json_exceptions.NotValideTypeForKey(value=dict_key)
 
+    # Протестировано
     def _read_dict_record_from_json(self, keys: tuple):
         json_data_dict = self._read_dict_from_json()
-        self.check_keys_tuple(keys=keys)
+        self._check_keys_tuple(keys=keys)
         result = json_data_dict
         for dict_key in keys:
             try:
@@ -157,8 +164,6 @@ class JsonFileManager(FileManager):
 
 
 # class JsonDB(JsonFileManager):
-
-
 
 
 class BaseJsonController(JsonFileManager):
