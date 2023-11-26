@@ -1,29 +1,36 @@
 import os
 
-from . import file_exceptions
+from .file_exceptions import (
+    FileNotYetExistException,
+    NoPathEntity,
+    NotSucsessCreateFile,
+    NotSuccessDeleteObjectEntity
+)
 
 
 class FileManager:
 
-    def object_is_file(self, filepath: str) -> bool:
-        """
-        Утилита которая проверяется, является ли объект файлом.
+    def __init__(self, path: str, destroy: bool = False,
+                 create: bool = False) -> None:
+        if create is True:
+            try:
+                if os.path.isfile(self.path_validator(value=path)):
+                    self.create_new_file(path=path)
+            except Exception:
+                raise NotSucsessCreateFile()
+        self.path = self.path_validator(value=path)
+        self.destroy = destroy
+        self.deleted = False
 
-        Args:
+    def create_new_file(self, path: str):
+        if not os.path.isfile(path=path):
+            self.write(data='', mode="w")
 
-            filepath (str): Путь проверяемого объекта.
+    def __del__(self):
+        if self.destroy and not self.deleted:
+            self.delete()
 
-        Returns:
-            bool: Ответ, лежит ли по указанному пути файл.
-
-        Raises:
-            file_exceptions.NoPathEntity: Ошибка, если передан не путь.
-        """
-        if isinstance(filepath, str):
-            return os.path.isfile(filepath)
-        raise file_exceptions.NoPathEntity(value=filepath)
-
-    def delete_file(self, filepath: str) -> None:
+    def delete(self) -> None:
         """
         Утилита которая удаляет файл.
 
@@ -32,30 +39,30 @@ class FileManager:
             - filepath (str): Путь удаляемого файла.
 
         Raises:
+
             file_exceptions.NotSuccessDeleteFileEntity: Ошибка,
                 если после удаления файл существует.
-            file_exceptions.DeleteNotExistFileEntity: Ошибка,
-                если такого файла не существует.
         """
-        if self.object_is_file(filepath=filepath):
-            os.remove(filepath)
-            if self.object_is_file(filepath=filepath):
-                raise file_exceptions.NotSuccessDeleteObjectEntity(
-                    path=filepath
-                )
+        if not self.deleted:
+            os.remove(self.exist_path)
+        if os.path.isfile(self.path):
+            raise NotSuccessDeleteObjectEntity(
+                path=self.path
+            )
+
+    def write(self, data, mode):
+        if not self.deleted:
+            with open(file=self.exist_path, mode=mode) as f:
+                f.write(data)
+
+    @property
+    def exist_path(self):
+        if os.path.isfile(self.path):
+            return self.path
+        raise FileNotYetExistException(path=self.path)
+
+    def path_validator(self, value: str):
+        if isinstance(value, str):
+            return value.strip()
         else:
-            raise file_exceptions.DeleteNotExistObjectEntity(path=filepath)
-
-    def file_not_exist(self, filepath):
-        if self.object_is_file(filepath=filepath):
-            raise file_exceptions.FileAlreadyExistEntity(path=filepath)
-
-    def write_to_new_file_text(self, filepath, data):
-        self.file_not_exist(filepath=filepath)
-        with open(file=filepath, mode='w') as f:
-            f.write(data)
-
-    def write_to_new_file_binary(self, filepath, data):
-        self.file_not_exist(filepath=filepath)
-        with open(file=filepath, mode='wb') as f:
-            f.write(data)
+            raise NoPathEntity(value=value)

@@ -27,7 +27,7 @@ if __name__ == "__main__":
         logger.debug("Запуск приложения в DEBUG режиме.")
         start_tests()
     elif len(console_arguments) == 1:
-            print_help()
+        print_help()
     elif len(console_arguments) == 2:
         flag = console_arguments[1]
         if flag in START_COMMAND_DICT.keys():

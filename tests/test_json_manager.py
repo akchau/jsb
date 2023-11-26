@@ -37,7 +37,7 @@ class TestJsonFileManagerInit(unittest.TestCase):
         self.assertEqual(jm.filepath, self.JSON_FILEPATH)
 
     def test_init_with_text_filepath(self):
-        with self.assertRaises(json_exceptions.NotJsonPathEntity) as context:
+        with self.assertRaises(json_exceptions.NotJsonPathException) as context:
             JsonFileManager(filepath=self.TEXT_FILEPATH)
             self.assertEqual(context.exception, (f"Путь {self.TEXT_FILEPATH} "
                                                  "является путем JSON-файла."))
@@ -179,7 +179,7 @@ class TestReadJson(unittest.TestCase):
     def test_with_empty_json(self):
         with open(file=self.JSON_FILEPATH, mode="w", encoding='utf-8'):
             pass
-        with self.assertRaises(json_exceptions.EmptyJsonEntity) as context:
+        with self.assertRaises(json_exceptions.EmptyJsonException) as context:
             self.jm._read_json()
             self.assertEqual(
                 context.exception,
@@ -188,7 +188,7 @@ class TestReadJson(unittest.TestCase):
             )
 
     def test_with_not_exist_json(self):
-        with self.assertRaises(json_exceptions.NotExistEntity) as context:
+        with self.assertRaises(json_exceptions.FileNotYetExistException) as context:
             self.jm._read_json()
             self.assertEqual(
                 context.exception,
@@ -238,7 +238,7 @@ class TestReadDictFromJson(unittest.TestCase):
                   encoding='utf-8') as new_json:
             json.dump(self.LIST_DATA, new_json, indent=4, ensure_ascii=False)
 
-        with self.assertRaises(json_exceptions.DataIsNotDictEntity) as context:
+        with self.assertRaises(json_exceptions.IsNotDictException) as context:
             self.jm._read_dict_from_json()
             self.assertEqual(
                 context.exception,
@@ -336,7 +336,7 @@ class TestReadDictFromJson(unittest.TestCase):
 #         with open(file=self.JSON_FILEPATH, mode="w", encoding='utf-8'):
 #             pass
 #         os.chmod(self.JSON_FILEPATH, 0o444)
-#         with self.assertRaises(json_exceptions.NotPermissionForWriteEntity) as context:
+#         with self.assertRaises(json_exceptions.NotPermissionForWriteException) as context:
 #             self.jm._load_data_in_json(
 #                 filepath=self.JSON_FILEPATH,
 #                 data=self.LIST_DATA
@@ -385,7 +385,7 @@ class TestReadDictRecordFromJson(unittest.TestCase):
         self.assertEqual(value, self.EXIST_VALUE)
 
     def test_with_not_exist_key(self):
-        with self.assertRaises(json_exceptions.KeyNotExistInJsonDict) as context:
+        with self.assertRaises(json_exceptions.KeyNotExistInDict) as context:
             self.jm._read_dict_record_from_json(
                 keys=(self.EXIST_KEY_1_LVL, self.NOT_EXIST_KEY)
             )
@@ -394,66 +394,3 @@ class TestReadDictRecordFromJson(unittest.TestCase):
                 (f"В файле {self.JSON_FILEPATH} не существует "
                  "ключа {self.NOT_EXIST_KEY}.")
             )
-
-
-class TestCheckKeysTuple(unittest.TestCase):
-    __JSON_FILENAME = "exist.json"
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.JSON_FILEPATH = os.path.join(
-            TEMP_FIXTURE_DIRPATH,
-            cls.__JSON_FILENAME
-        )
-
-    def setUp(self) -> None:
-        """Создание папки для тестов __fixtures__."""
-        os.mkdir(TEMP_FIXTURE_DIRPATH)
-        self.jm = JsonFileManager(filepath=self.JSON_FILEPATH)
-
-    def tearDown(self) -> None:
-        """Удаление папки для тестов __fixtures__."""
-        shutil.rmtree(TEMP_FIXTURE_DIRPATH)
-
-    def test_with_correct_keys(self):
-        correct_keys_tuple = ("key1", "key2", "key3")
-        try:
-            self.jm._check_keys_tuple(keys=correct_keys_tuple)
-        except Exception as e:
-            self.fail(f"Функция вернула исключение {e}, а не должна была.")
-
-    def test_with_empty_keys(self):
-        correct_keys_tuple = ("key1", "", "key3")
-
-        try:
-            self.jm._check_keys_tuple(keys=correct_keys_tuple)
-        except Exception as e:
-            self.fail(f"Функция вернула исключение {e}, а не должна была.")
-
-        data = {
-            "key1": {
-                "": {
-                    "key3": "value1"
-                }
-            }
-        }
-        with open(file=self.JSON_FILEPATH, mode="w") as json_file:
-            json.dump(data, json_file, indent=4, ensure_ascii=False)
-
-        result = self.jm._read_dict_record_from_json(correct_keys_tuple)
-        self.assertEqual(result, "value1")
-
-    def test_with_empty_tuple(self):
-        empty_keys_tuple = ()
-        with self.assertRaises(json_exceptions.KeyTupleIsEmpty) as context:
-            self.jm._check_keys_tuple(keys=empty_keys_tuple)
-            self.assertEqual(context, "Передан пустой кортеж ключей словаря.")
-
-    def test_with_incorrect_keys(self):
-        incorrect_keys_tuple = ("key1", [1, 3, 5, 6], "key3")
-        with self.assertRaises(json_exceptions.NotValideTypeForKey) as context:
-            self.jm._check_keys_tuple(keys=incorrect_keys_tuple)
-            self.assertEqual(
-                context,
-                (f"Значение [1, 3, 5, 6] имеет тип "
-                 f"{type([1, 3, 5, 6])} и не может быть ключом словаря."))

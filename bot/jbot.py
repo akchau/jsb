@@ -1,4 +1,5 @@
 
+from api_client.pollers.reset_poller import start_reset_poller
 from bot.user_logger import log_user_decorator
 from shedule_manager.schedule_saver import get_shedule_key
 from logger import logger
@@ -47,6 +48,7 @@ async def get_to_jheldor(update: Update, context: ContextTypes.DEFAULT_TYPE):
         arrived_station_code=settings.JELEZNODOROJNAYA["code"]
     )
 
+
 @log_user_decorator
 async def get_to_moscow(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buttons = ReplyKeyboardMarkup(
@@ -68,6 +70,7 @@ async def get_to_moscow(update: Update, context: ContextTypes.DEFAULT_TYPE):
         arrived_station_code=settings.NIJEGORODSKAYA["code"]
     )
 
+
 @log_user_decorator
 async def not_known_message(update: Update, context: ContextTypes.DEFAULT_TYPE):                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
     buttons = ReplyKeyboardMarkup(
@@ -81,6 +84,7 @@ async def not_known_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text="Бот не значет что ответить(",
         reply_markup=buttons
     )
+
 
 @log_user_decorator
 async def not_known_command(update: Update, context: ContextTypes.DEFAULT_TYPE):                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
@@ -98,6 +102,7 @@ async def not_known_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def start_bot():
+    start_reset_poller()
     logger.info("Запуск бота.")
     application = ApplicationBuilder().token(settings.BOT_TOKEN).build()
 

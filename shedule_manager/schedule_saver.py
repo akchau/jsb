@@ -1,6 +1,6 @@
 
 from core.json_manager.json_manager import BaseJsonController
-from api_client.yandex_shedule_client import request_shedule_from_rest_api
+from api_client.http_requests.get_schedule import get_schedule
 from logger import logger
 import settings
 from shedule_manager.shedule_parser import ScheduleParser, parse_shedule

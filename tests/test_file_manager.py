@@ -240,13 +240,13 @@ class TestDeleteFile(unittest.TestCase):
         - Несуществующий файл.
         """
         with self.assertRaises(
-           file_exceptions.DeleteNotExistObjectEntity) as context:
+           file_exceptions.FileNotYetExistException) as context:
             self.fm.delete_file(
                 filepath=self.FILEPATH
             )
             self.assertEqual(
                 context.exception,
-                f"Попытка удаления несуществующего объекта - {self.FILEPATH}")
+                f"Файл {self.FILEPATH} не существует.")
 
     def test_with_exist_file(self):
         """
@@ -308,7 +308,7 @@ class TestWriteToNewFile(unittest.TestCase):
         with open(self.FILEPATH, 'w+'):
             pass
         with self.assertRaises(
-           file_exceptions.FileAlreadyExistEntity) as context:
+           file_exceptions.FileAlreadyExistException) as context:
             self.fm.write_to_new_file_text(
                 filepath=self.FILEPATH,
                 data="Тестовый текст"
