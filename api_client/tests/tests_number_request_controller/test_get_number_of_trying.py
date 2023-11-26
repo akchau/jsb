@@ -31,26 +31,25 @@ class TestGetNumberOfTrying(unittest.TestCase):
             TEMP_FIXTURE_DIRPATH,
             "number_trying_day.json"
         )
-        cls.dict_key = "key"
-        cls.dict_value = "value"
+        cls.MAX_TRYING = 10
 
     def setUp(self) -> None:
         """Создание папки для тестов __fixtures__."""
         if os.path.isdir(TEMP_FIXTURE_DIRPATH):
             shutil.rmtree(TEMP_FIXTURE_DIRPATH)
         os.mkdir(TEMP_FIXTURE_DIRPATH)
+        self.controller = NumberRequestControler(
+            path=self.TEST_MEMORY_PATH,
+            max_requests=self.MAX_TRYING
+        )
         with open(file=self.TEST_MEMORY_PATH, mode="w",
                   encoding='utf-8') as new_json:
             json.dump(
-                {self.dict_key: self.dict_value},
+                {self.controller.LOST_TRYING_KEY: self.MAX_TRYING},
                 new_json,
                 indent=4,
                 ensure_ascii=False
             )
-        self.memory = NumberRequestControler(
-            path=self.TEST_MEMORY_PATH,
-            max_requests=10
-        )
 
     def tearDown(self) -> None:
         """Удаление папки для тестов __fixtures__."""
@@ -67,11 +66,11 @@ class TestGetNumberOfTrying(unittest.TestCase):
         - Путь json-файлa.
         """
         self.assertTrue(
-            self.memory.get_value(
+            self.controller.get_value(
                 parse_keys=(
                     (
-                        self.dict_key,
-                        str
+                        self.controller.LOST_TRYING_KEY,
+                        int
                     ),
                 )
             )
