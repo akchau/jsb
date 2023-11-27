@@ -27,7 +27,7 @@ class BasicHTTPClient:
             return value
         raise http_exceptions.PathNotString(value=value)
 
-    def __handle_response(self, response):
+    def __handle_response(self, response: requests.models.Response):
         """
         Хендлер обработки ошибок ответа сервера при запросе.
 
@@ -55,7 +55,11 @@ class BasicHTTPClient:
         elif response.status_code == 204:
             return None
         elif response.status_code == 400:
-            raise http_exceptions.BadRequest()
+            print(response.headers)
+            raise http_exceptions.BadRequest(
+                reason=response.content.decode("utf-8"),
+                url=response.url
+            )
         elif response.status_code == 401:
             raise http_exceptions.NonAuthorizedEntity()
         elif response.status_code == 403:
@@ -72,7 +76,7 @@ class BasicHTTPClient:
     def append_params(self, key, value):
         self._params[key] = value
 
-    def parse_response(self, data: dict):
+    def parse_response(self, data: dict) -> dict:
         return data
 
     def set_headers(self, headers: dict):

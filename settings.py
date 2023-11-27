@@ -11,7 +11,7 @@ PAGINATION = 120
 
 API_DOMAIN = os.getenv("API_DOMAIN")
 API_PORT = os.getenv("API_PORT")
-API_KEY = os.getenv("YANDEX_API_KEY")
+API_KEY = os.getenv("API_KEY")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 DATA_FOLDER = "data/system/shedule_cache"
 

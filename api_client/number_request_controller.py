@@ -109,6 +109,7 @@ def api_request_permission(func):
     """
     def wrapper(*args, **kwargs):
         if NumberRequestControler(
+            path=MEMORY_PATH,
             max_requests=settings.REQUESTS_IN_DAY,
         ).get_request_permission():
             return func(*args, **kwargs)

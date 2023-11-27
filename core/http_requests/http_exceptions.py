@@ -4,8 +4,12 @@ class RequestException(Exception):
 
 class BadRequest(RequestException):
     """Исключение для случаев ошибки 400 Bad Request."""
-    def __init__(self, message="Bad Request: Проверьте параметры запроса."):
-        super().__init__(message)
+    def __init__(self, url: str, reason: str, message="Bad Request: {reason}\nЗапрос: {url}"):
+        formatted_message = message.format(
+            reason=reason,
+            url=url
+        )
+        super().__init__(formatted_message)
 
 
 class NonAuthorizedEntity(RequestException):
