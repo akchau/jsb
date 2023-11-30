@@ -1,33 +1,37 @@
 import requests
 
 from . import http_exceptions
+from ..base_manager.base_manager import BaseTypeManager
 
 
-class BasicHTTPClient:
+class BasicHTTPClient(BaseTypeManager):
+    """
+    Базовый класс для запроса
+    """
     PREFIX = "http"
 
-    def __init__(self, host: str, port: int = "80"):
-        self.host = self.__slice(host)
-        self.port = self.__slice(port)
+    def __init__(self, host: str, port: int = "80") -> None:
+        self.host = self.slice_path(host)
+        self.port = self.validate_int(self.slice_path(port))
         self.domain = f"{self.PREFIX}://{host}:{port}/"
         self._headers = {}
-        self._params = {}
+        self._params: dict = {}
 
-    def __get_full_url(self, path):
-        clean_path = self.__slice(value=path)
+    def __get_full_url(self, path: str) -> str:
+        """
+        Возвращает полный адрес запроса.
+
+        Args:
+            path (str): Путь запроса.
+
+        Returns:
+            str: Полный адресс запроса.
+        """
+        clean_path = self.slice_path(value=path)
         return f"{self.domain}{clean_path}"
 
-    def __slice(self, value: str) -> str:
-        if isinstance(value, str):
-            value = value.strip()
-            if value.startswith("/"):
-                value = value[1:]
-            if value.endswith("/"):
-                value = value[:-1]
-            return value
-        raise http_exceptions.PathNotString(value=value)
-
-    def __handle_response(self, response: requests.models.Response):
+    def __handle_response(self,
+                          response: requests.models.Response) -> dict | None:
         """
         Хендлер обработки ошибок ответа сервера при запросе.
 
@@ -35,57 +39,78 @@ class BasicHTTPClient:
 
         Допустимые коды:
 
-        - 200
-
-        - 204
+        - 200 | 204 |
 
         Коды ошибок:
 
-        - 400
-
-        - 404
-
-        - 405
-
-        - 422
-
+        - 400 | 403 | 404 | 405 | 422 |
         """
-        if response.status_code == 200:
-            return self.parse_response(response.json())
-        elif response.status_code == 204:
-            return None
-        elif response.status_code == 400:
-            print(response.headers)
-            raise http_exceptions.BadRequest(
-                reason=response.content.decode("utf-8"),
-                url=response.url
-            )
-        elif response.status_code == 401:
-            raise http_exceptions.NonAuthorizedEntity()
-        elif response.status_code == 403:
-            raise http_exceptions.Forbidden(url=response.url_requested)
-        elif response.status_code == 404:
-            raise http_exceptions.NotFound(url=response.url_requested)
-        elif response.status_code == 405:
-            raise http_exceptions.MethodNotAllowed()
-        elif response.status_code == 422:
-            raise http_exceptions.UnprocessableEntity(data=response.json())
-        else:
-            raise http_exceptions.NotKnownCodeEntity(code=response.status_code)
+        match response.status_code:
+            case 200:
+                return self.parse_response(response.json())
+            case 204:
+                return None
+            case 400:
+                raise http_exceptions.BadRequest(
+                    reason=response.content.decode("utf-8"),
+                    url=response.url
+                )
+            case 401:
+                raise http_exceptions.NonAuthorizedEntity()
+            case 403:
+                raise http_exceptions.Forbidden(
+                    url=response.url_requested
+                )
+            case 404:
+                raise http_exceptions.NotFound(
+                    url=response.url_requested
+                )
+            case 405:
+                raise http_exceptions.MethodNotAllowed()
+            case 422:
+                raise http_exceptions.UnprocessableEntity(
+                    data=response.json()
+                )
+        raise http_exceptions.NotKnownCodeEntity(code=response.status_code)
 
-    def append_params(self, key, value):
-        self._params[key] = value
+    def set_params(self, params_dict: dict) -> None:
+        """
+        Метод добавляет словарь парметров к запросу.
+
+        Args:
+            params_dict (dict): Словарь параметров.
+        """
+        clean_params_dict: dict = self.validate_dict(params_dict)
+        for key, value in clean_params_dict.items():
+            self._params[self.validate_str(key)] = self.validate_str(value)
 
     def parse_response(self, data: dict) -> dict:
+        """
+        Метод обработки ответа.
+
+        Args:
+            data (dict): Полезная нагрузка ответа.
+
+        Returns:
+            dict: Словарь с распаршеными данными.
+        """
         return data
 
-    def set_headers(self, headers: dict):
-        self._headers = headers
+    def set_headers(self, headers: dict) -> None:
+        """
+        Метод добавляет словарь заголовков к запросу.
 
-    def get(self, path: str):
-        url = self.__get_full_url(path)
+        Args:
+            headers (dict): Словарь заголовков.
+        """
+        clean_headers_dict: dict = self.validate_dict(headers)
+        for key, value in clean_headers_dict.items():
+            self._params[self.validate_str(key)] = self.validate_str(value)
+
+    def get(self, path: str) -> dict | None:
+        url: str = self.__get_full_url(path)
         try:
-            response = requests.get(
+            response: requests.models.Response = requests.get(
                 url=url,
                 params=self._params,
                 headers=self._headers
@@ -95,10 +120,11 @@ class BasicHTTPClient:
             raise http_exceptions.NotSuccessTryingToConnectEntity(adress=url)
         return self.__handle_response(response)
 
-    def post(self, path: str, data: dict = None, json: dict = None):
-        url = self.__get_full_url(path)
+    def post(self, path: str, data: dict = None,
+             json: dict = None) -> dict | None:
+        url: str = self.__get_full_url(path)
         try:
-            response = requests.post(
+            response: requests.models.Response = requests.post(
                 url=url,
                 data=data,
                 json=json,
@@ -108,10 +134,11 @@ class BasicHTTPClient:
             raise http_exceptions.NotSuccessTryingToConnectEntity(adress=url)
         return self.__handle_response(response)
 
-    def put(self, path: str, data: dict = None, json: dict = None):
-        url = self.__get_full_url(path)
+    def put(self, path: str, data: dict = None,
+            json: dict = None) -> dict | None:
+        url: str = self.__get_full_url(path)
         try:
-            response = requests.put(
+            response: requests.models.Response = requests.put(
                 url=url,
                 data=data,
                 json=json,
@@ -121,10 +148,10 @@ class BasicHTTPClient:
             raise http_exceptions.NotSuccessTryingToConnectEntity(adress=url)
         return self.__handle_response(response)
 
-    def delete(self, path: str):
-        url = self.__get_full_url(path)
+    def delete(self, path: str) -> dict | None:
+        url: str = self.__get_full_url(path)
         try:
-            response = requests.delete(
+            response: requests.models.Response = requests.delete(
                 url=url,
                 params=self._params,
                 headers=self._headers
@@ -138,7 +165,7 @@ class BasicHTTPSClient(BasicHTTPClient):
     PREFIX = "https"
 
 
-# class BaseRequestWithBearerAuthorization(BasicHTTPClient):
-#     def __init__(self, url, token):
-#         super().__init__(url)
-#         self.set_headers({"Authorization": f"Bearer {token}"})
+class BaseRequestWithBearerAuthorization(BasicHTTPClient):
+    def __init__(self, url, token):
+        super().__init__(url)
+        self.set_headers({"Authorization": f"Bearer {token}"})

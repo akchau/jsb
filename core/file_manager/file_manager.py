@@ -1,30 +1,32 @@
 import os
 
+from ..base_manager.base_manager import BaseTypeManager
 from .file_exceptions import (
     FileNotYetExistException,
-    NoPathEntity,
+    FileAlreadyExistException,
     NotSucsessCreateFile,
     NotSuccessDeleteObjectEntity
 )
 
 
-class FileManager:
+class FileManager(BaseTypeManager):
 
     def __init__(self, path: str, destroy: bool = False,
                  create: bool = False) -> None:
-        if create is True:
+        self.path = self.slice_path(value=path)
+        if self.validate_bool(create) is True:
             try:
-                if os.path.isfile(self.path_validator(value=path)):
-                    self.create_new_file(path=path)
+                self.create_new_file()
             except Exception:
                 raise NotSucsessCreateFile()
-        self.path = self.path_validator(value=path)
-        self.destroy = destroy
+        self.destroy = self.validate_bool(data=destroy)
         self.deleted = False
 
-    def create_new_file(self, path: str):
-        if not os.path.isfile(path=path):
+    def create_new_file(self):
+        if not os.path.isfile(path=self.path):
             self.write(data='', mode="w")
+        else:
+            raise FileAlreadyExistException(path=self.path)
 
     def __del__(self):
         if self.destroy and not self.deleted:
@@ -60,9 +62,3 @@ class FileManager:
         if os.path.isfile(self.path):
             return self.path
         raise FileNotYetExistException(path=self.path)
-
-    def path_validator(self, value: str):
-        if isinstance(value, str):
-            return value.strip()
-        else:
-            raise NoPathEntity(value=value)

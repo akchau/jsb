@@ -1,9 +1,6 @@
-import json
 import os
-import shutil
 import unittest
 
-from ....number_request_controller import NumberRequestControler
 from ....http_requests.get_schedule import get_schedule
 
 

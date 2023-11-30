@@ -14,20 +14,8 @@ class JsonFileManager(FileManager):
     LAST_TIME_UPDATE_KEY = "last_update"
     START_DICT = {}
 
-    def __init__(self, path: str, destroy: bool = False,
-                 create: bool = False) -> None:
-        if create is True:
-            try:
-                if os.path.isfile(self.path_validator(value=path)):
-                    self.create_new_file(
-                        path=path,
-                        start_data=self.START_DICT
-                    )
-            except Exception:
-                raise NotSucsessCreateFile()
-        self.path = self.path_validator(value=path)
-        self.destroy = destroy
-        self.deleted = False
+    def __init__(self):
+        super().__init__()
 
     @property
     def json_path(self):
