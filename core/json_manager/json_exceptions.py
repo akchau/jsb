@@ -1,17 +1,7 @@
-from typing import Any
-
-from ..dict_manager.dict_exceptions import (
-    IsNotDictException,
-    KeyNotExistInDict,
-    NotValideTypeForKeyException
-)
-from ..file_manager.file_exceptions import (
-    FileAlreadyExistException,
+from core.file_manager.file_exceptions import (
     FileNotYetExistException,
-    NotSucsessCreateFile
-    
+    NotSucsessWriteDataToFile
 )
-
 
 class JsonFileException(Exception):
     """

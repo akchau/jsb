@@ -1,13 +1,10 @@
-from core.int_manager.int_exceptoins import IsNotIntException
-
-
-class ApiClientException(Exception):
+class LimmiterException(Exception):
     """
     Базовый класс исключений для работы с API-клиентом.
     """
 
 
-class NotSuccsessRefreshNumberOfTrying(ApiClientException):
+class NotSuccsessRefreshNumberOfTrying(LimmiterException):
     """
     Исключение, если попытка обновления количества оставшихся попыток неудачна.
     """

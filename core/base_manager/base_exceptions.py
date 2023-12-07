@@ -26,6 +26,25 @@ class IsNotIntException(BaseTypeException):
         super().__init__(formatted_message)
 
 
+class IsNotPositiveIntException(BaseTypeException):
+    """
+    Исключение, если значение не являются положительным целым.
+
+    Аргументы:
+
+    value (Any): Значение которое не является целым
+    """
+    def __init__(
+        self,
+        value: Any,
+        message: str = "{value} не целое положительное число."
+    ) -> None:
+        formatted_message: str = message.format(
+            value=value,
+        )
+        super().__init__(formatted_message)
+
+
 class IsNotDictException(BaseTypeException):
     """
     Исключение, если данные не являются словарем.
@@ -37,7 +56,7 @@ class IsNotDictException(BaseTypeException):
     def __init__(
         self,
         data: Any,
-        message: str = "{data}\n--\nне слоарь. ."
+        message: str = "{data} - не словарь."
     ) -> None:
         data_type: type = type(data)
         formatted_message: str = message.format(
@@ -49,7 +68,7 @@ class IsNotDictException(BaseTypeException):
 
 class IsNotListException(BaseTypeException):
     """
-    Исключение, если значение не являются целым.
+    Исключение, если значение не являются списком.
 
     Аргументы:
 
@@ -58,7 +77,7 @@ class IsNotListException(BaseTypeException):
     def __init__(
         self,
         value: Any,
-        message: str = "{value} не целое ."
+        message: str = "{value} не список ."
     ) -> None:
         formatted_message: str = message.format(
             value=value,
@@ -156,5 +175,41 @@ class NotValideTypeValueException(BaseTypeException):
             value=value,
             type=invalid_type,
             expected_type=expected_type
+        )
+        super().__init__(formatted_message)
+
+
+class NotKnownTypeOfData(BaseException):
+    """
+    Исключение когда при парсинге словаря получен необрабатываемый тип данных.
+    """
+    def __init__(
+        self,
+        value: Any,
+        expected_type: list,
+        message: str = ("Значение {value} имеет тип {type} а"
+                        " не один из ожидаемых типов {expected_type}.")) -> None:
+        invalid_type = type(value)
+        formatted_message = message.format(
+            value=value,
+            type=invalid_type,
+            expected_type=expected_type
+        )
+        super().__init__(formatted_message)
+
+
+class IndexOutOfListException(BaseException):
+    """
+    Исключение при выходе за границы массива.
+    """
+    def __init__(
+        self,
+        index: int,
+        max_length: int,
+        message: str = ("Значение {index} вышло за границы массива, "
+                        "который имеет длинну {max_length}")) -> None:
+        formatted_message = message.format(
+            index=index,
+            max_length=max_length
         )
         super().__init__(formatted_message)

@@ -1,17 +1,27 @@
+from typing import Any
+
+
 class FileException(Exception):
     """
     Базовый класс исключений для запросов.
     """
 
 
-class NoPathEntity(FileException):
+class NotTxtPathException(FileException):
     """
-    Исключение, если передано не значение пути.
+    Исключение, если передано не значение пути txt-файла.
+
+    Аргументы:
+
+    value (str): Значение которое передается в качестве пути.
     """
-    def __init__(self, value: str,
-                 message: str = "Переданное значение не является путем - "):
-        message = message + f"{value}"
-        super().__init__(message)
+    def __init__(
+        self,
+        value: str,
+        message: str = "Значение {value} не является путем txt-файла."
+    ) -> None:
+        formatted_message: str = message.format(value=value)
+        super().__init__(formatted_message)
 
 
 class DeleteNotExistObjectEntity(FileException):
@@ -79,8 +89,32 @@ class NotSucsessCreateFile(FileException):
     """
     def __init__(
         self,
-        path,
-        message="Не удалось создать файл {path}."
+        path: str,
+        message: str = "Не удалось создать файл {path}."
     ) -> None:
         formatted_message: str = message.format(path=path)
+        super().__init__(formatted_message)
+
+
+class NotSucsessWriteDataToFile(FileException):
+    """
+    Исключение, если не удалось записать данные в файл.
+
+    Аргументы:
+
+    - path (str): Путь файла.
+
+    - data (Any): Данные которые не удалось записать в файл.
+
+    """
+    def __init__(
+        self,
+        path: str,
+        data: Any,
+        message="Не удалось записать данные {data} в файл {path}."
+    ) -> None:
+        formatted_message: str = message.format(
+            data=data,
+            path=path
+        )
         super().__init__(formatted_message)

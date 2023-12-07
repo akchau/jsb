@@ -1,69 +1,50 @@
-from datetime import date, datetime, timedelta
+from datetime import datetime
 import json
 import os
-import time
 from typing import Any
 
-from ..dict_manager.dict_manager import validate_dict, parse_dict
 from ..file_manager.file_manager import FileManager
-from .json_exceptions import EmptyJsonException, NotJsonPathException, NotSucsessCreateFile
+from .json_exceptions import (
+    EmptyJsonException,
+    FileNotYetExistException,
+    NotJsonPathException,
+    NotSucsessWriteDataToFile
+)
 
 
 class JsonFileManager(FileManager):
+    """
+    Класс управления json-файлом.
+    """
 
-    LAST_TIME_UPDATE_KEY = "last_update"
-    START_DICT = {}
+    def validate_path(self, value: str) -> str:
+        """
+        Метод проверки пути.
 
-    def __init__(self):
-        super().__init__()
+        Args:
+            value (str): Значение передаваемое в качестве пути.
 
-    @property
-    def json_path(self):
-        if self.path.endswith(".json"):
-            return self.exist_path
-        else:
-            raise NotJsonPathException(value=self.exist_path)
+        Returns:
+            str: Возвращаемое знчение.
+        """
+        clean_string = self.validate_str(data=value)
+        if clean_string.endswith(".json"):
+            return clean_string
+        raise NotJsonPathException(value=value)
 
-    def create_new_file(self, path: str, start_data):
-        start_data: dict = validate_dict(data=start_data)
-        with open(file=path, mode="w", encoding='utf-8') as new_json:
+    def write_data(self, data: Any) -> None:
+        with open(file=self.path, mode="w", encoding='utf-8') as new_json:
             json.dump(
-                start_data,
+                data,
                 new_json,
                 indent=4,
                 ensure_ascii=False
             )
+        writed_data = self.get_data()
+        if writed_data != data:
+            raise NotSucsessWriteDataToFile(path=self.path, data=data)
 
-    def _service_info(self) -> dict:
-        return {self.LAST_TIME_UPDATE_KEY: str(datetime.now())}
-
-    def write(self, data: dict) -> None:
-        """
-        Утилита, которая загружает в json-файл словарь.
-
-        Args:
-
-            - filepath (str): Путь файла, в который будет загружаться словарь
-
-            - data (dict): Словарь.
-        """
-        clean_data: dict = validate_dict(data)
-        clean_data.update(self._service_info())
-        self.create_new_file(path=self.json_path, start_data=data)
-
-    def get_value(self, parse_keys: tuple) -> Any:
-        return parse_dict(
-            data=self._read_json(),
-            parse_keys=parse_keys
-        )
-
-    def get_last_time_update(self) -> datetime:
-        return parse_dict(
-            data=self._read_json(),
-            parse_keys=((self.LAST_TIME_UPDATE_KEY, datetime.datetime),)
-        )
-
-    def _read_json(self) -> dict:
+    def get_data(self) -> Any:
         """
         Утилита которая возвращает содержимое json-файла.
 
@@ -79,12 +60,14 @@ class JsonFileManager(FileManager):
         Returns:
             dict: Содержимое json-файла.
         """
-        try:
-            with open(file=self.json_path, mode='r',
-                      encoding='utf-8') as json_file:
-                return json.load(json_file)
-        except json.decoder.JSONDecodeError as e:
-            if os.stat(self.json_path).st_size == 0:
-                raise EmptyJsonException(path=self.json_path)
-            else:
-                raise e
+        if self.file_exist():
+            try:
+                with open(file=self.path, mode='r',
+                          encoding='utf-8') as json_file:
+                    return json.load(json_file)
+            except json.decoder.JSONDecodeError as e:
+                if os.stat(self.path).st_size == 0:
+                    raise EmptyJsonException(path=self.path)
+                else:
+                    raise e
+        raise FileNotYetExistException(path=self.path)

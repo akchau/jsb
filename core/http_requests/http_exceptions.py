@@ -48,6 +48,16 @@ class UnprocessableEntity(RequestException):
         super().__init__(formatted_message)
 
 
+class ServerErrorException(RequestException):
+    """
+    Исключение, если внутренняя ошибка сервера.
+    """
+    def __init__(self, reason,
+                 message="Server Error: {reason}"):
+        formatted_message = message.format(reason=reason)
+        super().__init__(formatted_message)
+
+
 class NotKnownCodeEntity(RequestException):
     """Исключение для неизвестного кода ответа."""
     def __init__(self, code, message="Неизвестный код: {code}."):
