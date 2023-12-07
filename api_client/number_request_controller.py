@@ -33,7 +33,7 @@ def api_request_permission(func):
     return wrapper
 
 
-def set_start_value(new_value: int) -> None:
+def set_start_value() -> None:
     """
     Задание актуального значения оставшихся попыток перед
     запуском бота.
@@ -41,14 +41,15 @@ def set_start_value(new_value: int) -> None:
     Args:
         new_value (int): Актуальное значение
     """
+    start_value: int = int(input("Введите оставшееся количество попыток: "))
     NumberRequestControler(
         path=MEMORY_PATH,
         full_number=settings.REQUESTS_IN_DAY
-    ).set_actual_number_of_trying(new_value=new_value)
+    ).set_actual_number_of_trying(new_value=start_value)
 
 
 def try_to_reset():
-    controller = NumberRequestControler(
+    controller: NumberRequestControler = NumberRequestControler(
         path=MEMORY_PATH,
         full_number=settings.REQUESTS_IN_DAY
     )

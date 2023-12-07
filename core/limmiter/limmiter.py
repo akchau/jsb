@@ -7,7 +7,7 @@ from .limmiter_exceptions import NotSuccsessRefreshNumberOfTrying
 
 class NumberLimmiterWithJsonMemory(BaseTypeManager):
     """
-    Класс-ограничитель. Используется для счета запросов.
+    Класс-ограничитель. Используется для счета запросов в день.
     Работает на json-файле. Не удаляет файл после завершения работы.
     """
 
@@ -20,15 +20,16 @@ class NumberLimmiterWithJsonMemory(BaseTypeManager):
     }
     value_key = "value_key"
     last_update_key = "last_update"
+    TIME_FORMAT_STRING = "%Y-%m-%d %H:%M"
 
     def __init__(self, memory_path: str, full_number: int):
         """
 
         Args:
 
-            - path (str): Путь файла для запоминания.
+            - memory_path (str): Путь файла для запоминания.
 
-            - full_number (int): Максимальное количество попыток.
+            - full_number (int): Максимальное количество попыток в сутки.
         """
         self.memory: JsonFileManager = JsonFileManager(
                 path=memory_path,
@@ -40,16 +41,33 @@ class NumberLimmiterWithJsonMemory(BaseTypeManager):
             self.memory.write_data(
                 {
                     self.value_key: self.full_number,
-                    self.last_update_key: datetime.now().strftime("%Y-%m-%d %H:%M")
+                    self.last_update_key: datetime.now().strftime(
+                        self.TIME_FORMAT_STRING
+                    )
                 }
             )
 
     def get_last_update_time(self) -> str:
-        memory_data = self.memory.get_data()
+        """
+        Получение времени последнего обновления.
+
+        Returns:
+            str: Время последнего обновления.
+        """
+        memory_data: dict = self.memory.get_data()
         return self.parse(memory_data, [(self.last_update_key, dict)])
 
     def is_update_today(self) -> bool:
-        last_update_time = datetime.strptime(self.get_last_update_time(), "%Y-%m-%d %H:%M")
+        """
+        Было ли обновлено сегодня?.
+
+        Returns:
+            bool: Вердикт
+        """
+        last_update_time: datetime = datetime.strptime(
+            self.get_last_update_time(),
+            self.TIME_FORMAT_STRING
+        )
         return last_update_time.date() == datetime.now().date()
 
     def get_memory_value(self) -> int:
@@ -111,9 +129,14 @@ class NumberLimmiterWithJsonMemory(BaseTypeManager):
         Args:
             new_value (int, optional): Новое значение.
         """
+        # Если требуется сбросить до максимального значения.
         if new_value is None:
-            new_value = self.write_new_number_of_trying(new_value=self.full_number, reset=True)
+            new_value = self.write_new_number_of_trying(
+                new_value=self.full_number,
+                reset=True
+            )
             logger.info(f"ЗНАЧЕНИЕ ОБНОВЛЕНО: {new_value}")
+        # Если требуется задать стартовое значениее.
         else:
-            new_value = self.write_new_number_of_trying(new_value=new_value)
+            new_value = self.write_new_number_of_trying(new_value=new_value, reset=True)
             logger.info(f"ЗАДАНО КОЛИЧЕСТВА ОСТАВШИХСЯ ПОПЫТОК: {new_value}")
