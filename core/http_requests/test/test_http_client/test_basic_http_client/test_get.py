@@ -14,6 +14,9 @@ from ....http_exceptions import (
 
 
 class MockResponseSucess:
+    """
+    Моковый объект ответа с кодом 200.
+    """
 
     @staticmethod
     def json():
@@ -25,7 +28,9 @@ class MockResponseSucess:
 
 
 class MockResponseNotFound:
-
+    """
+    Моковый объект ответа с кодом 404.
+    """
     @staticmethod
     def json():
         return {"error": "Not Found"}
@@ -36,7 +41,9 @@ class MockResponseNotFound:
 
 
 class MockResponseBadRequest:
-
+    """
+    Моковый объект ответа с кодом 400.
+    """
     @staticmethod
     def json():
         return {"error": "Bad Request"}
@@ -51,7 +58,9 @@ class MockResponseBadRequest:
 
 
 class MockResponseServerError:
-
+    """
+    Моковый объект ответа с кодом 500.
+    """
     @staticmethod
     def json():
         return {"error": "Server Error"}
@@ -66,7 +75,9 @@ class MockResponseServerError:
 
 
 class MockResponseUnauthorized:
-
+    """
+    Моковый объект ответа с кодом 401.
+    """
     @staticmethod
     def json():
         return {"error": "Unauthorized"}
@@ -77,7 +88,9 @@ class MockResponseUnauthorized:
 
 
 class MockResponseForbiden:
-
+    """
+    Моковый объект ответа с кодом 403.
+    """
     @staticmethod
     def json():
         return {"error": "Forbiden"}
@@ -88,7 +101,9 @@ class MockResponseForbiden:
 
 
 class MockResponseUnprocessableEntity:
-
+    """
+    Моковый объект ответа с кодом 422.
+    """
     @staticmethod
     def json():
         return {"error": "Unprocessable entity"}
@@ -99,7 +114,9 @@ class MockResponseUnprocessableEntity:
 
 
 class MockResponseMethodNotAllowed:
-
+    """
+    Моковый объект ответа с кодом 405.
+    """
     @staticmethod
     def json():
         return {"error": "Method Not Allowed"}
@@ -109,216 +126,141 @@ class MockResponseMethodNotAllowed:
         return 405
 
 
-class TestWithCode200(unittest.TestCase):
+class TestWithCodes(unittest.TestCase):
 
-    def setUp(self):
-        self.host = "api.ru"
-        self.path = 'full/url'
-        self.headers_dict = {
+    @classmethod
+    def setUpClass(cls):
+        cls.host = "api.ru"
+        cls.path = 'full/url'
+        cls.full_url = f"http://{cls.host}:80/{cls.path}"
+        cls.headers_dict = {
             "header_1": "header_value_1",
             "header_2": "header_value_2"
         }
-        self.params_dict = {
+        cls.params_dict = {
             "param_1": "param_value_1",
             "param_2": "param_value_2"
         }
-
-    @patch("requests.get", autospec=True)
-    def test_get(self, mock_get):
-        client = BasicHTTPClient(
-            host=self.host
+        cls.client = BasicHTTPClient(
+            host=cls.host
         )
-        client.set_headers(headers=self.headers_dict)
-        client.set_params(params_dict=self.params_dict)
-        mock_get.return_value = MockResponseSucess()
-        result = client.get(
+        cls.client.set_headers(headers=cls.headers_dict)
+        cls.client.set_params(params_dict=cls.params_dict)
+
+    def function_call(self):
+        return self.client.get(
             path=self.path
         )
+
+    @patch("requests.get", autospec=True)
+    def test_with_200(self, mock_get):
+        """
+        Вызов с ответом 200.
+        """
+        # Моковый объект ответа
+        mock_get.return_value = MockResponseSucess()
+        result = self.function_call()
         mock_get.assert_called_with(
-            url=f"http://{self.host}:80/{self.path}",
+            url=self.full_url,
             params=self.params_dict,
             headers=self.headers_dict,
         )
-        self.assertEqual(result, {"key": "value"})
-
-
-class TestWithCode404(unittest.TestCase):
-
-    def setUp(self):
-        self.host = "api.ru"
-        self.path = 'full/url'
-        self.headers_dict = {
-            "header_1": "header_value_1",
-            "header_2": "header_value_2"
-        }
-        self.params_dict = {
-            "param_1": "param_value_1",
-            "param_2": "param_value_2"
-        }
+        self.assertEqual(result, MockResponseSucess().json())
 
     @patch("requests.get", autospec=True)
-    def test_get(self, mock_get):
-        client = BasicHTTPClient(
-            host=self.host
-        )
-        client.set_headers(headers=self.headers_dict)
-        client.set_params(params_dict=self.params_dict)
+    def test_with_404(self, mock_get):
+        """
+        Вызов с ответом 404.
+        """
         mock_get.return_value = MockResponseNotFound()
         with self.assertRaises(NotFoundException):
-            client.get(self.path)
-
-
-class TestWithCode400(unittest.TestCase):
-
-    def setUp(self):
-        self.host = "api.ru"
-        self.path = 'full/url'
-        self.headers_dict = {
-            "header_1": "header_value_1",
-            "header_2": "header_value_2"
-        }
-        self.params_dict = {
-            "param_1": "param_value_1",
-            "param_2": "param_value_2"
-        }
+            self.function_call()
+        mock_get.assert_called_with(
+            url=self.full_url,
+            params=self.params_dict,
+            headers=self.headers_dict,
+        )
 
     @patch("requests.get", autospec=True)
-    def test_get(self, mock_get):
-        client = BasicHTTPClient(
-            host=self.host
-        )
-        client.set_headers(headers=self.headers_dict)
-        client.set_params(params_dict=self.params_dict)
+    def test_with_400(self, mock_get):
+        """
+        Вызов с ответом 400.
+        """
         mock_get.return_value = MockResponseBadRequest()
         with self.assertRaises(BadRequestException):
-            client.get(self.path)
-
-
-class TestWithCode500(unittest.TestCase):
-
-    def setUp(self):
-        self.host = "api.ru"
-        self.path = 'full/url'
-        self.headers_dict = {
-            "header_1": "header_value_1",
-            "header_2": "header_value_2"
-        }
-        self.params_dict = {
-            "param_1": "param_value_1",
-            "param_2": "param_value_2"
-        }
+            self.function_call()
+        mock_get.assert_called_with(
+            url=self.full_url,
+            params=self.params_dict,
+            headers=self.headers_dict,
+        )
 
     @patch("requests.get", autospec=True)
-    def test_get(self, mock_get):
-        client = BasicHTTPClient(
-            host=self.host
-        )
-        client.set_headers(headers=self.headers_dict)
-        client.set_params(params_dict=self.params_dict)
+    def test_with_500(self, mock_get):
+        """
+        Вызов с ответом 500.
+        """
         mock_get.return_value = MockResponseServerError()
         with self.assertRaises(ServerErrorException):
-            client.get(self.path)
-
-
-class TestWithCode401(unittest.TestCase):
-
-    def setUp(self):
-        self.host = "api.ru"
-        self.path = 'full/url'
-        self.headers_dict = {
-            "header_1": "header_value_1",
-            "header_2": "header_value_2"
-        }
-        self.params_dict = {
-            "param_1": "param_value_1",
-            "param_2": "param_value_2"
-        }
+            self.function_call()
+        mock_get.assert_called_with(
+            url=self.full_url,
+            params=self.params_dict,
+            headers=self.headers_dict,
+        )
 
     @patch("requests.get", autospec=True)
-    def test_get(self, mock_get):
-        client = BasicHTTPClient(
-            host=self.host
-        )
-        client.set_headers(headers=self.headers_dict)
-        client.set_params(params_dict=self.params_dict)
+    def test_with_401(self, mock_get):
+        """
+        Вызов с ответом 401.
+        """
         mock_get.return_value = MockResponseUnauthorized()
         with self.assertRaises(NonAuthorizedException):
-            client.get(self.path)
-
-
-class TestWithCode403(unittest.TestCase):
-
-    def setUp(self):
-        self.host = "api.ru"
-        self.path = 'full/url'
-        self.headers_dict = {
-            "header_1": "header_value_1",
-            "header_2": "header_value_2"
-        }
-        self.params_dict = {
-            "param_1": "param_value_1",
-            "param_2": "param_value_2"
-        }
+            self.function_call()
+        mock_get.assert_called_with(
+            url=self.full_url,
+            params=self.params_dict,
+            headers=self.headers_dict,
+        )
 
     @patch("requests.get", autospec=True)
-    def test_get(self, mock_get):
-        client = BasicHTTPClient(
-            host=self.host
-        )
-        client.set_headers(headers=self.headers_dict)
-        client.set_params(params_dict=self.params_dict)
+    def test_with_403(self, mock_get):
+        """
+        Вызов с ответом 403.
+        """
         mock_get.return_value = MockResponseForbiden()
         with self.assertRaises(ForbiddenException):
-            client.get(self.path)
-
-
-class TestWithCode422(unittest.TestCase):
-
-    def setUp(self):
-        self.host = "api.ru"
-        self.path = 'full/url'
-        self.headers_dict = {
-            "header_1": "header_value_1",
-            "header_2": "header_value_2"
-        }
-        self.params_dict = {
-            "param_1": "param_value_1",
-            "param_2": "param_value_2"
-        }
+            self.function_call()
+        mock_get.assert_called_with(
+            url=self.full_url,
+            params=self.params_dict,
+            headers=self.headers_dict,
+        )
 
     @patch("requests.get", autospec=True)
-    def test_get(self, mock_get):
-        client = BasicHTTPClient(
-            host=self.host
-        )
-        client.set_headers(headers=self.headers_dict)
-        client.set_params(params_dict=self.params_dict)
+    def test_with_422(self, mock_get):
+        """
+        Вызов с ответом 422.
+        """
         mock_get.return_value = MockResponseUnprocessableEntity()
         with self.assertRaises(UnprocessableEntityException):
-            client.get(self.path)
-
-
-class TestWithCode405(unittest.TestCase):
-
-    def setUp(self):
-        self.host = "api.ru"
-        self.path = 'full/url'
-        self.headers_dict = {
-            "header_1": "header_value_1",
-            "header_2": "header_value_2"
-        }
-        self.params_dict = {
-            "param_1": "param_value_1",
-            "param_2": "param_value_2"
-        }
+            self.function_call()
+        mock_get.assert_called_with(
+            url=self.full_url,
+            params=self.params_dict,
+            headers=self.headers_dict,
+        )
 
     @patch("requests.get", autospec=True)
-    def test_get(self, mock_get):
-        client = BasicHTTPClient(
-            host=self.host
-        )
-        client.set_headers(headers=self.headers_dict)
-        client.set_params(params_dict=self.params_dict)
+    def test_get_with_405(self, mock_get):
+        """
+        Вызов с ответом 405.
+        """
         mock_get.return_value = MockResponseMethodNotAllowed()
         with self.assertRaises(MethodNotAllowedException):
-            client.get(self.path)
+            self.function_call()
+        mock_get.assert_called_with(
+            url=self.full_url,
+            params=self.params_dict,
+            headers=self.headers_dict,
+        )
