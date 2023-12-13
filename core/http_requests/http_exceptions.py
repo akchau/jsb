@@ -22,7 +22,7 @@ class NonAuthorizedException(RequestException):
     Исключение для случаев ошибки 401 Non Authorized.
     """
     def __init__(self, url: str,
-                 message="Не авторизованны для доступа на {url}"):
+                 message="Не авторизованны для доступа на \"{url}\"!"):
         formatted_message = message.format(url=url)
         super().__init__(formatted_message)
 
@@ -43,7 +43,7 @@ class ForbiddenException(RequestException):
     Исключение для случаев ошибки 403 Not Found.
     """
     def __init__(self, url: str,
-                 message="Forbidden: Нет доступа по адрессу: \"{url}\"!"):
+                 message="Нет доступа на: \"{url}\"!"):
         formatted_message = message.format(url=url)
         super().__init__(formatted_message)
 
@@ -52,17 +52,19 @@ class MethodNotAllowedException(RequestException):
     """
     Исключение для случаев ошибки 405 Method Not Allowed.
     """
-    def __init__(self, message="Method Not Allowed: Такого методне разрешен."):
-        super().__init__(message)
+    def __init__(self, url: str, method: str,
+                 message="Метод {method} не разрешен для запроса на {url}."):
+        formatted_message = message.format(method=method, url=url)
+        super().__init__(formatted_message)
 
 
 class UnprocessableEntityException(RequestException):
     """
     Исключение для случаев ошибки 422 Unprocessable Entity.
     """
-    def __init__(self, data,
-                 message="Unprocessable Entity: Неверные данные: {data}"):
-        formatted_message = message.format(data=data)
+    def __init__(self, data, url: str,
+                 message="Неверные данные при запросе на {url}: {data}"):
+        formatted_message = message.format(data=data, url=url)
         super().__init__(formatted_message)
 
 
@@ -80,8 +82,9 @@ class NotKnownCodeException(RequestException):
     """
     Исключение для неизвестного кода ответа.
     """
-    def __init__(self, code, message="Неизвестный код: {code}."):
-        formatted_message = message.format(code=code)
+    def __init__(self, code: int, url: str,
+                 message="Неизвестный код при запросе на {url}: {code}."):
+        formatted_message = message.format(code=code, url=url)
         super().__init__(formatted_message)
 
 

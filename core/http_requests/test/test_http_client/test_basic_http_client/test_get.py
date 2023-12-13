@@ -9,7 +9,8 @@ from ....http_exceptions import (
     NonAuthorizedException,
     NotFoundException,
     ServerErrorException,
-    UnprocessableEntityException
+    UnprocessableEntityException,
+    NotKnownCodeException
 )
 
 
@@ -17,6 +18,16 @@ class MockResponseSucess:
     """
     Моковый объект ответа с кодом 200.
     """
+
+    class MockRequest:
+        """
+        Вложенный моковый объект для Request.
+        """
+        def __init__(self, method):
+            self.method = method
+
+    def __init__(self, method):
+        self.request = self.MockRequest(method)
 
     @staticmethod
     def json():
@@ -31,6 +42,17 @@ class MockResponseNotFound:
     """
     Моковый объект ответа с кодом 404.
     """
+
+    class MockRequest:
+        """
+        Вложенный моковый объект для Request.
+        """
+        def __init__(self, method):
+            self.method = method
+
+    def __init__(self, method):
+        self.request = self.MockRequest(method)
+
     @staticmethod
     def json():
         return {"error": "Not Found"}
@@ -44,6 +66,17 @@ class MockResponseBadRequest:
     """
     Моковый объект ответа с кодом 400.
     """
+
+    class MockRequest:
+        """
+        Вложенный моковый объект для Request.
+        """
+        def __init__(self, method):
+            self.method = method
+
+    def __init__(self, method):
+        self.request = self.MockRequest(method)
+
     @staticmethod
     def json():
         return {"error": "Bad Request"}
@@ -61,6 +94,17 @@ class MockResponseServerError:
     """
     Моковый объект ответа с кодом 500.
     """
+
+    class MockRequest:
+        """
+        Вложенный моковый объект для Request.
+        """
+        def __init__(self, method):
+            self.method = method
+
+    def __init__(self, method):
+        self.request = self.MockRequest(method)
+
     @staticmethod
     def json():
         return {"error": "Server Error"}
@@ -78,6 +122,17 @@ class MockResponseUnauthorized:
     """
     Моковый объект ответа с кодом 401.
     """
+
+    class MockRequest:
+        """
+        Вложенный моковый объект для Request.
+        """
+        def __init__(self, method):
+            self.method = method
+
+    def __init__(self, method):
+        self.request = self.MockRequest(method)
+
     @staticmethod
     def json():
         return {"error": "Unauthorized"}
@@ -91,6 +146,17 @@ class MockResponseForbiden:
     """
     Моковый объект ответа с кодом 403.
     """
+
+    class MockRequest:
+        """
+        Вложенный моковый объект для Request.
+        """
+        def __init__(self, method):
+            self.method = method
+
+    def __init__(self, method):
+        self.request = self.MockRequest(method)
+
     @staticmethod
     def json():
         return {"error": "Forbiden"}
@@ -104,6 +170,17 @@ class MockResponseUnprocessableEntity:
     """
     Моковый объект ответа с кодом 422.
     """
+
+    class MockRequest:
+        """
+        Вложенный моковый объект для Request.
+        """
+        def __init__(self, method):
+            self.method = method
+
+    def __init__(self, method):
+        self.request = self.MockRequest(method)
+
     @staticmethod
     def json():
         return {"error": "Unprocessable entity"}
@@ -117,6 +194,17 @@ class MockResponseMethodNotAllowed:
     """
     Моковый объект ответа с кодом 405.
     """
+
+    class MockRequest:
+        """
+        Вложенный моковый объект для Request.
+        """
+        def __init__(self, method):
+            self.method = method
+
+    def __init__(self, method):
+        self.request = self.MockRequest(method)
+
     @staticmethod
     def json():
         return {"error": "Method Not Allowed"}
@@ -126,7 +214,33 @@ class MockResponseMethodNotAllowed:
         return 405
 
 
+class MockResponseNotKnownCode:
+    """
+    Моковый объект ответа с кодом 1000.
+    """
+
+    class MockRequest:
+        """
+        Вложенный моковый объект для Request.
+        """
+        def __init__(self, method):
+            self.method = method
+
+    def __init__(self, method):
+        self.request = self.MockRequest(method)
+
+    @staticmethod
+    def json():
+        return {"key": "value"}
+
+    @property
+    def status_code(self):
+        return 1000
+
+
 class TestWithCodes(unittest.TestCase):
+
+    METHOD = "GET"
 
     @classmethod
     def setUpClass(cls):
@@ -164,7 +278,8 @@ class TestWithCodes(unittest.TestCase):
         Вызов с ответом 200.
         """
         # Моковый объект ответа
-        mock_get.return_value = MockResponseSucess()
+        mock_get.return_value = MockResponseSucess(
+            method=self.METHOD)
         result: dict[str, str] = self.function_call()
         mock_get.assert_called_with(
             url=self.full_url,
@@ -178,7 +293,8 @@ class TestWithCodes(unittest.TestCase):
         """
         Вызов с ответом 404.
         """
-        mock_get.return_value = MockResponseNotFound()
+        mock_get.return_value = MockResponseNotFound(
+            method=self.METHOD)
         with self.assertRaises(NotFoundException) as context:
             self.function_call()
         self.assertEqual(
@@ -196,7 +312,8 @@ class TestWithCodes(unittest.TestCase):
         """
         Вызов с ответом 400.
         """
-        mock_get.return_value = MockResponseBadRequest()
+        mock_get.return_value = MockResponseBadRequest(
+            method=self.METHOD)
         with self.assertRaises(BadRequestException) as context:
             self.function_call()
         self.assertEqual(
@@ -215,12 +332,14 @@ class TestWithCodes(unittest.TestCase):
         """
         Вызов с ответом 500.
         """
-        mock_get.return_value = MockResponseServerError()
+        mock_get.return_value = MockResponseServerError(
+            method=self.METHOD)
         with self.assertRaises(ServerErrorException) as context:
             self.function_call()
         self.assertEqual(
             context.exception.args[0],
-            f"Ошибка сервера при запросе на {self.full_url}: {mock_get.return_value.content.decode()}"
+            (f"Ошибка сервера при запросе на {self.full_url}: "
+             f"{mock_get.return_value.content.decode()}")
         )
         mock_get.assert_called_with(
             url=self.full_url,
@@ -233,12 +352,13 @@ class TestWithCodes(unittest.TestCase):
         """
         Вызов с ответом 401.
         """
-        mock_get.return_value = MockResponseUnauthorized()
+        mock_get.return_value = MockResponseUnauthorized(
+            method=self.METHOD)
         with self.assertRaises(NonAuthorizedException) as context:
             self.function_call()
         self.assertEqual(
             context.exception.args[0],
-            f"Не авторизованны для доступа на {self.full_url}"
+            f"Не авторизованны для доступа на \"{self.full_url}\"!"
         )
         mock_get.assert_called_with(
             url=self.full_url,
@@ -251,9 +371,14 @@ class TestWithCodes(unittest.TestCase):
         """
         Вызов с ответом 403.
         """
-        mock_get.return_value = MockResponseForbiden()
-        with self.assertRaises(ForbiddenException):
+        mock_get.return_value = MockResponseForbiden(
+            method=self.METHOD)
+        with self.assertRaises(ForbiddenException) as context:
             self.function_call()
+        self.assertEqual(
+            context.exception.args[0],
+            f"Нет доступа на: \"{self.full_url}\"!"
+        )
         mock_get.assert_called_with(
             url=self.full_url,
             params=self.params_dict,
@@ -265,9 +390,15 @@ class TestWithCodes(unittest.TestCase):
         """
         Вызов с ответом 422.
         """
-        mock_get.return_value = MockResponseUnprocessableEntity()
-        with self.assertRaises(UnprocessableEntityException):
+        mock_get.return_value = MockResponseUnprocessableEntity(
+            method=self.METHOD)
+        with self.assertRaises(UnprocessableEntityException) as context:
             self.function_call()
+        self.assertEqual(
+            context.exception.args[0],
+            (f"Неверные данные при запросе на {self.full_url}: "
+             f"{mock_get.return_value.json()}")
+        )
         mock_get.assert_called_with(
             url=self.full_url,
             params=self.params_dict,
@@ -279,9 +410,33 @@ class TestWithCodes(unittest.TestCase):
         """
         Вызов с ответом 405.
         """
-        mock_get.return_value = MockResponseMethodNotAllowed()
-        with self.assertRaises(MethodNotAllowedException):
+        mock_get.return_value = MockResponseMethodNotAllowed(
+            method=self.METHOD)
+        with self.assertRaises(MethodNotAllowedException) as context:
             self.function_call()
+        self.assertEqual(
+            context.exception.args[0],
+            f"Метод {self.METHOD} не разрешен для запроса на {self.full_url}."
+        )
+        mock_get.assert_called_with(
+            url=self.full_url,
+            params=self.params_dict,
+            headers=self.headers_dict,
+        )
+
+    @patch("requests.get", autospec=True)
+    def test_get_with_not_known_code(self, mock_get):
+        """
+        Вызов с ответом 405.
+        """
+        mock_get.return_value = MockResponseNotKnownCode(method=self.METHOD)
+        with self.assertRaises(NotKnownCodeException) as context:
+            self.function_call()
+        self.assertEqual(
+            context.exception.args[0],
+            (f"Неизвестный код при запросе на {self.full_url}: "
+             f"{mock_get.return_value.status_code}.")
+        )
         mock_get.assert_called_with(
             url=self.full_url,
             params=self.params_dict,

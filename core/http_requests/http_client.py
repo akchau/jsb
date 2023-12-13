@@ -82,17 +82,24 @@ class BasicHTTPClient(BaseTypeManager):
                     url=response.url_requested
                 )
             case 405:
-                raise http_exceptions.MethodNotAllowedException()
+                raise http_exceptions.MethodNotAllowedException(
+                    url=response.url_requested,
+                    method=response.request.method
+                )
             case 422:
                 raise http_exceptions.UnprocessableEntityException(
-                    data=response.json()
+                    data=response.json(),
+                    url=response.url_requested
                 )
             case 500:
                 raise http_exceptions.ServerErrorException(
                     reason=response.content.decode("utf-8"),
                     url=response.url_requested
                 )
-        raise http_exceptions.NotKnownCodeException(code=response.status_code)
+        raise http_exceptions.NotKnownCodeException(
+            code=response.status_code,
+            url=response.url_requested
+        )
 
     def set_params(self, params_dict: dict) -> None:
         """
