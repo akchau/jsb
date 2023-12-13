@@ -9,7 +9,7 @@ class BadRequestException(RequestException):
     Исключение для случаев ошибки 400 Bad Request.
     """
     def __init__(self, url: str, reason: str,
-                 message="Bad Request: {reason}\nЗапрос: {url}"):
+                 message="Неверный запрос на {url}: {reason}\n"):
         formatted_message = message.format(
             reason=reason,
             url=url
@@ -21,8 +21,10 @@ class NonAuthorizedException(RequestException):
     """
     Исключение для случаев ошибки 401 Non Authorized.
     """
-    def __init__(self, message="Non Authorized: Не авторизованны."):
-        super().__init__(message)
+    def __init__(self, url: str,
+                 message="Не авторизованны для доступа на {url}"):
+        formatted_message = message.format(url=url)
+        super().__init__(formatted_message)
 
 
 class NotFoundException(RequestException):
@@ -30,7 +32,7 @@ class NotFoundException(RequestException):
     Исключение для случаев ошибки 404 Not Found.
     """
     def __init__(self, url: str,
-                 message=("Not Found Error: Такого адресса: "
+                 message=("Такого адресса: "
                           "\"{url}\" - не существует!")):
         formatted_message = message.format(url=url)
         super().__init__(formatted_message)
@@ -68,9 +70,9 @@ class ServerErrorException(RequestException):
     """
     Исключение, если внутренняя ошибка сервера.
     """
-    def __init__(self, reason,
-                 message="Server Error: {reason}"):
-        formatted_message = message.format(reason=reason)
+    def __init__(self, reason: str, url: str,
+                 message="Ошибка сервера при запросе на {url}: {reason}"):
+        formatted_message = message.format(reason=reason, url=url)
         super().__init__(formatted_message)
 
 

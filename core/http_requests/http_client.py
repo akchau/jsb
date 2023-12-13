@@ -70,7 +70,9 @@ class BasicHTTPClient(BaseTypeManager):
                     url=response.url_requested
                 )
             case 401:
-                raise http_exceptions.NonAuthorizedException()
+                raise http_exceptions.NonAuthorizedException(
+                    url=response.url_requested
+                )
             case 403:
                 raise http_exceptions.ForbiddenException(
                     url=response.url_requested
@@ -87,7 +89,8 @@ class BasicHTTPClient(BaseTypeManager):
                 )
             case 500:
                 raise http_exceptions.ServerErrorException(
-                    reason=response.content.decode("utf-8")
+                    reason=response.content.decode("utf-8"),
+                    url=response.url_requested
                 )
         raise http_exceptions.NotKnownCodeException(code=response.status_code)
 

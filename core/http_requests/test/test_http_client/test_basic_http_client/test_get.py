@@ -147,7 +147,13 @@ class TestWithCodes(unittest.TestCase):
         cls.client.set_headers(headers=cls.headers_dict)
         cls.client.set_params(params_dict=cls.params_dict)
 
-    def function_call(self):
+    def function_call(self) -> dict[str, str]:
+        """
+        Метод делает тестовый вызов метода.
+
+        Returns:
+            dict[str, str]: Полезная нагрузка response.
+        """
         return self.client.get(
             path=self.path
         )
@@ -159,13 +165,13 @@ class TestWithCodes(unittest.TestCase):
         """
         # Моковый объект ответа
         mock_get.return_value = MockResponseSucess()
-        result = self.function_call()
+        result: dict[str, str] = self.function_call()
         mock_get.assert_called_with(
             url=self.full_url,
             params=self.params_dict,
             headers=self.headers_dict,
         )
-        self.assertEqual(result, MockResponseSucess().json())
+        self.assertEqual(result, mock_get.return_value.json())
 
     @patch("requests.get", autospec=True)
     def test_with_404(self, mock_get):
@@ -173,8 +179,12 @@ class TestWithCodes(unittest.TestCase):
         Вызов с ответом 404.
         """
         mock_get.return_value = MockResponseNotFound()
-        with self.assertRaises(NotFoundException):
+        with self.assertRaises(NotFoundException) as context:
             self.function_call()
+        self.assertEqual(
+            context.exception.args[0],
+            f"Такого адресса: \"{self.full_url}\" - не существует!"
+        )
         mock_get.assert_called_with(
             url=self.full_url,
             params=self.params_dict,
@@ -187,8 +197,13 @@ class TestWithCodes(unittest.TestCase):
         Вызов с ответом 400.
         """
         mock_get.return_value = MockResponseBadRequest()
-        with self.assertRaises(BadRequestException):
+        with self.assertRaises(BadRequestException) as context:
             self.function_call()
+        self.assertEqual(
+            context.exception.args[0],
+            (f"Неверный запрос на {self.full_url}: "
+             f"{mock_get.return_value.content.decode()}\n")
+        )
         mock_get.assert_called_with(
             url=self.full_url,
             params=self.params_dict,
@@ -201,8 +216,12 @@ class TestWithCodes(unittest.TestCase):
         Вызов с ответом 500.
         """
         mock_get.return_value = MockResponseServerError()
-        with self.assertRaises(ServerErrorException):
+        with self.assertRaises(ServerErrorException) as context:
             self.function_call()
+        self.assertEqual(
+            context.exception.args[0],
+            f"Ошибка сервера при запросе на {self.full_url}: {mock_get.return_value.content.decode()}"
+        )
         mock_get.assert_called_with(
             url=self.full_url,
             params=self.params_dict,
@@ -215,8 +234,12 @@ class TestWithCodes(unittest.TestCase):
         Вызов с ответом 401.
         """
         mock_get.return_value = MockResponseUnauthorized()
-        with self.assertRaises(NonAuthorizedException):
+        with self.assertRaises(NonAuthorizedException) as context:
             self.function_call()
+        self.assertEqual(
+            context.exception.args[0],
+            f"Не авторизованны для доступа на {self.full_url}"
+        )
         mock_get.assert_called_with(
             url=self.full_url,
             params=self.params_dict,
