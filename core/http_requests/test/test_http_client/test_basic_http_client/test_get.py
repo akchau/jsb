@@ -3,13 +3,13 @@ from unittest.mock import patch
 
 from ....http_client import BasicHTTPClient
 from ....http_exceptions import (
-    BadRequest,
-    Forbidden,
-    MethodNotAllowed,
-    NonAuthorizedEntity,
-    NotFound,
+    BadRequestException,
+    ForbiddenException,
+    MethodNotAllowedException,
+    NonAuthorizedException,
+    NotFoundException,
     ServerErrorException,
-    UnprocessableEntity
+    UnprocessableEntityException
 )
 
 
@@ -164,7 +164,7 @@ class TestWithCode404(unittest.TestCase):
         client.set_headers(headers=self.headers_dict)
         client.set_params(params_dict=self.params_dict)
         mock_get.return_value = MockResponseNotFound()
-        with self.assertRaises(NotFound):
+        with self.assertRaises(NotFoundException):
             client.get(self.path)
 
 
@@ -190,7 +190,7 @@ class TestWithCode400(unittest.TestCase):
         client.set_headers(headers=self.headers_dict)
         client.set_params(params_dict=self.params_dict)
         mock_get.return_value = MockResponseBadRequest()
-        with self.assertRaises(BadRequest):
+        with self.assertRaises(BadRequestException):
             client.get(self.path)
 
 
@@ -242,7 +242,7 @@ class TestWithCode401(unittest.TestCase):
         client.set_headers(headers=self.headers_dict)
         client.set_params(params_dict=self.params_dict)
         mock_get.return_value = MockResponseUnauthorized()
-        with self.assertRaises(NonAuthorizedEntity):
+        with self.assertRaises(NonAuthorizedException):
             client.get(self.path)
 
 
@@ -268,7 +268,7 @@ class TestWithCode403(unittest.TestCase):
         client.set_headers(headers=self.headers_dict)
         client.set_params(params_dict=self.params_dict)
         mock_get.return_value = MockResponseForbiden()
-        with self.assertRaises(Forbidden):
+        with self.assertRaises(ForbiddenException):
             client.get(self.path)
 
 
@@ -294,7 +294,7 @@ class TestWithCode422(unittest.TestCase):
         client.set_headers(headers=self.headers_dict)
         client.set_params(params_dict=self.params_dict)
         mock_get.return_value = MockResponseUnprocessableEntity()
-        with self.assertRaises(UnprocessableEntity):
+        with self.assertRaises(UnprocessableEntityException):
             client.get(self.path)
 
 
@@ -320,5 +320,5 @@ class TestWithCode405(unittest.TestCase):
         client.set_headers(headers=self.headers_dict)
         client.set_params(params_dict=self.params_dict)
         mock_get.return_value = MockResponseMethodNotAllowed()
-        with self.assertRaises(MethodNotAllowed):
+        with self.assertRaises(MethodNotAllowedException):
             client.get(self.path)

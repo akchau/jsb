@@ -65,31 +65,31 @@ class BasicHTTPClient(BaseTypeManager):
             case 204:
                 return None
             case 400:
-                raise http_exceptions.BadRequest(
+                raise http_exceptions.BadRequestException(
                     reason=response.content.decode("utf-8"),
                     url=response.url_requested
                 )
             case 401:
-                raise http_exceptions.NonAuthorizedEntity()
+                raise http_exceptions.NonAuthorizedException()
             case 403:
-                raise http_exceptions.Forbidden(
+                raise http_exceptions.ForbiddenException(
                     url=response.url_requested
                 )
             case 404:
-                raise http_exceptions.NotFound(
+                raise http_exceptions.NotFoundException(
                     url=response.url_requested
                 )
             case 405:
-                raise http_exceptions.MethodNotAllowed()
+                raise http_exceptions.MethodNotAllowedException()
             case 422:
-                raise http_exceptions.UnprocessableEntity(
+                raise http_exceptions.UnprocessableEntityException(
                     data=response.json()
                 )
             case 500:
                 raise http_exceptions.ServerErrorException(
                     reason=response.content.decode("utf-8")
                 )
-        raise http_exceptions.NotKnownCodeEntity(code=response.status_code)
+        raise http_exceptions.NotKnownCodeException(code=response.status_code)
 
     def set_params(self, params_dict: dict) -> None:
         """
@@ -139,7 +139,7 @@ class BasicHTTPClient(BaseTypeManager):
 
         Raises:
 
-            - http_exceptions.NotSuccessTryingToConnectEntity: Неудачная
+            - http_exceptions.NotSuccessTryingToConnectException: Неудачная
               попытка запроса.
 
         Returns:
@@ -155,7 +155,9 @@ class BasicHTTPClient(BaseTypeManager):
             )
             response.url_requested = url
         except requests.exceptions.ConnectionError:
-            raise http_exceptions.NotSuccessTryingToConnectEntity(adress=url)
+            raise http_exceptions.NotSuccessTryingToConnectException(
+                adress=url
+            )
         return self.__handle_response(response)
 
     def post(self, path: str, data: dict = None,
@@ -173,7 +175,7 @@ class BasicHTTPClient(BaseTypeManager):
 
         Raises:
 
-            - http_exceptions.NotSuccessTryingToConnectEntity: Неудачная
+            - http_exceptions.NotSuccessTryingToConnectException: Неудачная
               попытка запроса.
 
         Returns:
@@ -190,7 +192,9 @@ class BasicHTTPClient(BaseTypeManager):
             )
             response.url_requested = url
         except requests.exceptions.ConnectionError:
-            raise http_exceptions.NotSuccessTryingToConnectEntity(adress=url)
+            raise http_exceptions.NotSuccessTryingToConnectException(
+                adress=url
+            )
         return self.__handle_response(response)
 
     def put(self, path: str, data: dict = None,
@@ -208,7 +212,7 @@ class BasicHTTPClient(BaseTypeManager):
 
         Raises:
 
-            - http_exceptions.NotSuccessTryingToConnectEntity: Неудачная
+            - http_exceptions.NotSuccessTryingToConnectException: Неудачная
               попытка запроса.
 
         Returns:
@@ -224,7 +228,7 @@ class BasicHTTPClient(BaseTypeManager):
             )
             response.url_requested = url
         except requests.exceptions.ConnectionError:
-            raise http_exceptions.NotSuccessTryingToConnectEntity(adress=url)
+            raise http_exceptions.NotSuccessTryingToConnectException(adress=url)
         return self.__handle_response(response)
 
     def delete(self, path: str) -> dict | None:
@@ -235,7 +239,7 @@ class BasicHTTPClient(BaseTypeManager):
             - path (str): Путь запроса.
 
         Raises:
-            - http_exceptions.NotSuccessTryingToConnectEntity: Неудачная
+            - http_exceptions.NotSuccessTryingToConnectException: Неудачная
               попытка запроса.
 
         Returns:
@@ -250,7 +254,9 @@ class BasicHTTPClient(BaseTypeManager):
             )
             response.url_requested = url
         except requests.exceptions.ConnectionError:
-            raise http_exceptions.NotSuccessTryingToConnectEntity(adress=url)
+            raise http_exceptions.NotSuccessTryingToConnectException(
+                adress=url
+            )
         return self.__handle_response(response)
 
 
