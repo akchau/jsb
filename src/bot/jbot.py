@@ -8,28 +8,45 @@ from src.settings import settings
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    buttons = [
-        [InlineKeyboardButton("Из Москвы", callback_data='schedule_from_moscow')],
-        [InlineKeyboardButton("В Москву", callback_data='schedule_to_moscow')]
-    ]
-    reply_markup = InlineKeyboardMarkup(buttons)
+    departure_stations = [("Железнодорожная", "s343")]
+    departure_buttons = [InlineKeyboardButton(station_name, callback_data=station_code)
+                         for station_name, station_code in departure_stations]
+    reply_markup = InlineKeyboardMarkup([departure_buttons])
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="В какую сторону?",
+        text="Станция отправления?",
         reply_markup=reply_markup
     )
 
 
-async def get_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_departure_station(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    if query.data == 'schedule_from_moscow':
-        schedule_direction = "Из Москвы"
-    elif query.data == 'schedule_to_moscow':
-        schedule_direction = "В Москву"
-    else:
-        raise Exception("Неизвестное расписание")
+    selected_station = query.data
+    context.user_data['departure_station'] = selected_station
+
+    arrival_stations = [("Москва", "m123"), ("Санкт-Петербург", "m456")]
+    arrival_buttons = [InlineKeyboardButton(station_name, callback_data=station_code)
+                       for station_name, station_code in arrival_stations]
+    reply_markup = InlineKeyboardMarkup([arrival_buttons])
+
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Станция прибытия?",
+        reply_markup=reply_markup
+    )
+
+
+async def handle_arrival_station(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    selected_arrival_station = query.data
+    context.user_data['arrival_station'] = selected_arrival_station
+
+    departure_station = context.user_data.get('departure_station')
+    arrival_station = context.user_data.get('arrival_station')
 
     buttons = ReplyKeyboardMarkup(
         [
@@ -39,7 +56,7 @@ async def get_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=f"Загружаю расписание {schedule_direction}. Секундочку..."
+        text=f"Загружаю расписание {departure_station}-{arrival_station}. Секундочку..."
     )
     schedule_pages = []
     for schedule_message in schedule_pages:
@@ -84,15 +101,22 @@ def start_bot():
     # Инициализация приложения.
     application = ApplicationBuilder().token(settings.BOT_TOKEN).build()
 
-    get_schedule_handler = CallbackQueryHandler(get_schedule, pattern='schedule_.*')
-    application.add_handler(get_schedule_handler)
-
+    # Обработчик команды /start
     start_handler = CommandHandler('start', start)
     application.add_handler(start_handler)
 
+    # Обработчики для выбора станции отправления и станции прибытия
+    departure_station_handler = CallbackQueryHandler(handle_departure_station, pattern=r'^s\d+$')
+    arrival_station_handler = CallbackQueryHandler(handle_arrival_station, pattern=r'^m\d+$')
+
+    application.add_handler(departure_station_handler)
+    application.add_handler(arrival_station_handler)
+
+    # Обработчик неизвестных команд
     echo_command_handler = MessageHandler(filters.COMMAND, not_known_command)
     application.add_handler(echo_command_handler)
 
+    # Обработчик неизвестных сообщений
     echo_handler = MessageHandler(filters.TEXT, not_known_message)
     application.add_handler(echo_handler)
 
