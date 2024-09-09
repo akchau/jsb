@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     DB_HOST: str
     DB_PORT: int
     BOT_TOKEN: str
+    API_BASE_URL: str
+    API_KEY: str
 
     class Config:
         env_file = os.path.join(BASE_DIR, '.env')
