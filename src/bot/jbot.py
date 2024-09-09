@@ -1,77 +1,56 @@
-
-from api_client.pollers.reset_poller import start_reset_poller
-from bot.user_logger import log_user_decorator
-from shedule_manager.schedule_saver import get_shedule_key
 from logger import logger
-from bot.send_schedule import load_and_sent_schedule
-from telegram import Update, ReplyKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (ApplicationBuilder, ContextTypes, CommandHandler,
-                          MessageHandler, filters
+                          MessageHandler, filters, CallbackQueryHandler
 )
 
-import settings
+from src.settings import settings
 
 
-@log_user_decorator
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    buttons = ReplyKeyboardMarkup(
-        [
-            ["/to_jheldor"],
-            ["/to_moscow"],
-        ],
-        resize_keyboard=True
-    )
+    buttons = [
+        [InlineKeyboardButton("Из Москвы", callback_data='schedule_from_moscow')],
+        [InlineKeyboardButton("В Москву", callback_data='schedule_to_moscow')]
+    ]
+    reply_markup = InlineKeyboardMarkup(buttons)
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="В какую сторону?",
-        reply_markup=buttons
+        reply_markup=reply_markup
     )
 
 
-@log_user_decorator
-async def get_to_jheldor(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def get_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    if query.data == 'schedule_from_moscow':
+        schedule_direction = "Из Москвы"
+    elif query.data == 'schedule_to_moscow':
+        schedule_direction = "В Москву"
+    else:
+        raise Exception("Неизвестное расписание")
+
     buttons = ReplyKeyboardMarkup(
         [
-            ["/to_moscow"],
+            ["/В обратную сторону"],
         ],
         resize_keyboard=True
     )
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Загружаю расписание. Секундочку..."
+        text=f"Загружаю расписание {schedule_direction}. Секундочку..."
     )
-    await load_and_sent_schedule(
-        update,
-        context,
-        buttons,
-        departure_station_code=settings.NIJEGORODSKAYA["code"],
-        arrived_station_code=settings.JELEZNODOROJNAYA["code"]
-    )
+    schedule_pages = []
+    for schedule_message in schedule_pages:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=schedule_message,
+            reply_markup=buttons,
+            parse_mode="html"
+        )
 
 
-@log_user_decorator
-async def get_to_moscow(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    buttons = ReplyKeyboardMarkup(
-        [
-            ["/to_jheldor"],
-        ],
-        resize_keyboard=True
-    )
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="Загружаю расписание. Секундочку..."
-    )
-    key = get_shedule_key(settings.JELEZNODOROJNAYA["code"], settings.NIJEGORODSKAYA["code"])
-    await load_and_sent_schedule(
-        update,
-        context,
-        buttons,
-        departure_station_code=settings.JELEZNODOROJNAYA["code"],
-        arrived_station_code=settings.NIJEGORODSKAYA["code"]
-    )
-
-
-@log_user_decorator
 async def not_known_message(update: Update, context: ContextTypes.DEFAULT_TYPE):                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
     buttons = ReplyKeyboardMarkup(
         [
@@ -86,7 +65,6 @@ async def not_known_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-@log_user_decorator
 async def not_known_command(update: Update, context: ContextTypes.DEFAULT_TYPE):                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
     buttons = ReplyKeyboardMarkup(
         [
@@ -102,15 +80,12 @@ async def not_known_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def start_bot():
-    start_reset_poller()
     logger.info("Запуск бота.")
+    # Инициализация приложения.
     application = ApplicationBuilder().token(settings.BOT_TOKEN).build()
 
-    to_jheldor_handler = CommandHandler('to_jheldor', get_to_jheldor)
-    application.add_handler(to_jheldor_handler)
-
-    to_moscow_handler = CommandHandler('to_moscow', get_to_moscow)
-    application.add_handler(to_moscow_handler)
+    get_schedule_handler = CallbackQueryHandler(get_schedule, pattern='schedule_.*')
+    application.add_handler(get_schedule_handler)
 
     start_handler = CommandHandler('start', start)
     application.add_handler(start_handler)

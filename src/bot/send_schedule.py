@@ -2,8 +2,9 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from core.send_schedule import BaseDataConstructor
-import settings
+from src import settings
 from shedule_manager.schedule_getter import get_current_shedule
+
 
 class DataConstructor(BaseDataConstructor):
 

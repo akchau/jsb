@@ -1,9 +1,8 @@
 
 from core.json_manager.json_manager import BaseJsonController
-from api_client.http_requests.get_schedule import get_schedule
 from logger import logger
-import settings
-from shedule_manager.shedule_parser import ScheduleParser, parse_shedule
+from src import settings
+from shedule_manager.shedule_parser import parse_shedule
 
 
 def get_shedule_key(departure_station_code, arrived_station_code):

@@ -1,5 +1,5 @@
 from datetime import date
-from settings import API_DOMAIN, API_PORT, API_KEY
+from src.settings import API_DOMAIN, API_PORT, API_KEY
 from core.http_requests.http_client import BasicHTTPSlientParamAuthorization
 from ..number_request_controller import api_request_permission
 

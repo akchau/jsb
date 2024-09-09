@@ -1,7 +1,6 @@
 import logging
-import sys
 
-import settings
+from src.settings import settings
 
 logger = logging.getLogger(__name__)
 

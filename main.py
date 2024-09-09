@@ -1,7 +1,7 @@
 import sys
 
 from logger import logger
-from bot.jbot import start_bot
+from src.bot.jbot import start_bot
 from test import start_tests
 
 

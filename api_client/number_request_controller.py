@@ -1,8 +1,6 @@
 import os
-import uuid
-from core.json_manager.json_manager import JsonFileManager
 from core.limmiter.limmiter import NumberLimmiterWithJsonMemory
-import settings
+from src import settings
 
 # -------- Путь к файлу -----------------
 MEMORY_PATH: str = os.path.join(
