@@ -4,23 +4,31 @@ from telegram.ext import (ApplicationBuilder, ContextTypes, CommandHandler,
                           MessageHandler, filters, CallbackQueryHandler
 )
 
+from src.init_app import get_app_data
 from src.settings import settings
 
 
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    stations = [("Железнодорожная", "s343")]
-    departure_buttons = [InlineKeyboardButton(station_name, callback_data=station_code)
-                         for station_name, station_code in stations]
-    reply_markup = InlineKeyboardMarkup([departure_buttons])
+    stations = get_app_data().controller.get_available_for_registration_stations()
+    departure_buttons = [[InlineKeyboardButton(station_name, callback_data=station_code)] for station_name, station_code in stations]
+    reply_markup = InlineKeyboardMarkup(departure_buttons)
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Какую станцию зарегестрировать? Осталось - 5" ,
+        text="Какую станцию зарегестрировать? Осталось - 5",
         reply_markup=reply_markup
     )
 
 
+async def register_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    station_code = query.data
+    await query.answer()
+    get_app_data().controller.register_new_station(station_code)
+    await register(update, context)
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    departure_stations = [("Железнодорожная", "s343")]
+    departure_stations = get_app_data().controller.get_registered_stations()
     departure_buttons = [InlineKeyboardButton(station_name, callback_data=station_code)
                          for station_name, station_code in departure_stations]
     reply_markup = InlineKeyboardMarkup([departure_buttons])
@@ -38,7 +46,7 @@ async def handle_departure_station(update: Update, context: ContextTypes.DEFAULT
     selected_station = query.data
     context.user_data['departure_station'] = selected_station
 
-    arrival_stations = [("Москва", "m123"), ("Санкт-Петербург", "m456")]
+    arrival_stations = get_app_data().controller.get_registered_stations()
     arrival_buttons = [InlineKeyboardButton(station_name, callback_data=station_code)
                        for station_name, station_code in arrival_stations]
     reply_markup = InlineKeyboardMarkup([arrival_buttons])
@@ -117,8 +125,8 @@ def start_bot():
     start_handler = CommandHandler('start', start)
     application.add_handler(start_handler)
 
-    # register_handler = CommandHandler('register', register)
-    # application.add_handler(register_handler)
+    application.add_handler(CommandHandler("register", register))
+    application.add_handler(CallbackQueryHandler(register_handler))
 
     # Обработчики для выбора станции отправления и станции прибытия
     departure_station_handler = CallbackQueryHandler(handle_departure_station, pattern=r'^s\d+$')

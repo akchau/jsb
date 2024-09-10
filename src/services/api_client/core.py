@@ -17,7 +17,7 @@ class TransportApiClient(ApiClient):
         )["schedule"][0]["thread"]["uid"]
 
     def get_stations(self, thread_uid):
-        return self.transport.get(
+        all_stations_data = self.transport.get(
             path="thread/",
             headers={
                 "Content-Type": "application/json"
@@ -26,6 +26,7 @@ class TransportApiClient(ApiClient):
                 "apikey": self.store["api_key"],
                 "uid": thread_uid
             }
-        )
+        )["stops"]
+        return [(station["station"]["title"], station["station"]["code"]) for station in all_stations_data]
 
     # def get_schedule(self):

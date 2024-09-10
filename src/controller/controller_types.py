@@ -1,0 +1,1 @@
+Station = tuple[str, str]
