@@ -7,6 +7,18 @@ from telegram.ext import (ApplicationBuilder, ContextTypes, CommandHandler,
 from src.settings import settings
 
 
+async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    stations = [("Железнодорожная", "s343")]
+    departure_buttons = [InlineKeyboardButton(station_name, callback_data=station_code)
+                         for station_name, station_code in stations]
+    reply_markup = InlineKeyboardMarkup([departure_buttons])
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Какую станцию зарегестрировать? Осталось - 5" ,
+        reply_markup=reply_markup
+    )
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     departure_stations = [("Железнодорожная", "s343")]
     departure_buttons = [InlineKeyboardButton(station_name, callback_data=station_code)
@@ -104,6 +116,9 @@ def start_bot():
     # Обработчик команды /start
     start_handler = CommandHandler('start', start)
     application.add_handler(start_handler)
+
+    # register_handler = CommandHandler('register', register)
+    # application.add_handler(register_handler)
 
     # Обработчики для выбора станции отправления и станции прибытия
     departure_station_handler = CallbackQueryHandler(handle_departure_station, pattern=r'^s\d+$')

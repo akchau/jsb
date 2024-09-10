@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     BOT_TOKEN: str
     API_BASE_URL: str
     API_KEY: str
+    BASE_STATION_CODE: str
 
     class Config:
         env_file = os.path.join(BASE_DIR, '.env')
