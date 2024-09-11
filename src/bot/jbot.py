@@ -1,8 +1,8 @@
 from logger import logger
-from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton
 from telegram.ext import (ApplicationBuilder, ContextTypes, CommandHandler,
                           MessageHandler, filters, CallbackQueryHandler
-)
+                          )
 
 from src.init_app import get_app_data
 from src.settings import settings
@@ -14,7 +14,7 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(departure_buttons)
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Какую станцию зарегестрировать? Осталось - 5",
+        text="Какую станцию зарегистрировать? Осталось - 5",
         reply_markup=reply_markup
     )
 
@@ -24,71 +24,49 @@ async def register_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     station_code = query.data
     await query.answer()
     get_app_data().controller.register_new_station(station_code)
-    await register(update, context)
+    await admin_zone(update, context)
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    departure_stations = get_app_data().controller.get_registered_stations()
-    departure_buttons = [InlineKeyboardButton(station_name, callback_data=station_code)
-                         for station_name, station_code in departure_stations]
-    reply_markup = InlineKeyboardMarkup([departure_buttons])
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="Станция отправления?",
-        reply_markup=reply_markup
-    )
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    keyboard = [
+        [KeyboardButton("Админ зона"), KeyboardButton("Расписание")]
+    ]
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    await update.message.reply_text('Выберите опцию:', reply_markup=reply_markup)
 
 
-async def handle_departure_station(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    selected_station = query.data
-    context.user_data['departure_station'] = selected_station
-
-    arrival_stations = get_app_data().controller.get_registered_stations()
-    arrival_buttons = [InlineKeyboardButton(station_name, callback_data=station_code)
-                       for station_name, station_code in arrival_stations]
-    reply_markup = InlineKeyboardMarkup([arrival_buttons])
-
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="Станция прибытия?",
-        reply_markup=reply_markup
-    )
+async def admin_zone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    keyboard = [
+        ["Зарегистрировать", "Мои станции"],
+        ["Назад"]
+    ]
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    await update.message.reply_text('Админ зона:', reply_markup=reply_markup)
 
 
-async def handle_arrival_station(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    selected_arrival_station = query.data
-    context.user_data['arrival_station'] = selected_arrival_station
-
-    departure_station = context.user_data.get('departure_station')
-    arrival_station = context.user_data.get('arrival_station')
-
-    buttons = ReplyKeyboardMarkup(
-        [
-            ["/В обратную сторону"],
-        ],
-        resize_keyboard=True
-    )
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text=f"Загружаю расписание {departure_station}-{arrival_station}. Секундочку..."
-    )
-    schedule_pages = []
-    for schedule_message in schedule_pages:
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=schedule_message,
-            reply_markup=buttons,
-            parse_mode="html"
-        )
+async def back_to_main(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await start(update, context)
 
 
-async def not_known_message(update: Update, context: ContextTypes.DEFAULT_TYPE):                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+async def my_stations(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    stations = get_app_data().controller.get_registered_stations()
+    if not stations:
+        if update.callback_query:
+            await update.callback_query.edit_message_text('У вас нет зарегистрированных станций.')
+        else:
+            await update.message.reply_text('У вас нет зарегистрированных станций.')
+    else:
+        keyboard = [[InlineKeyboardButton(str(station), callback_data='noop')] for station in stations]
+        keyboard.append([InlineKeyboardButton("Назад", callback_data='back_to_main')])
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        if update.callback_query:
+            await update.callback_query.edit_message_text('Ваши станции:', reply_markup=reply_markup)
+        else:
+            await update.message.reply_text('Ваши станции:', reply_markup=reply_markup)
+
+
+async def not_known_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buttons = ReplyKeyboardMarkup(
         [
             ["/start"],
@@ -97,12 +75,12 @@ async def not_known_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Бот не значет что ответить(",
+        text="Бот не знает что ответить(",
         reply_markup=buttons
     )
 
 
-async def not_known_command(update: Update, context: ContextTypes.DEFAULT_TYPE):                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+async def not_known_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buttons = ReplyKeyboardMarkup(
         [
             ["/start"],
@@ -111,37 +89,24 @@ async def not_known_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Бот не значет такую команду(",
+        text="Бот не знает такую команду(",
         reply_markup=buttons
     )
 
 
 def start_bot():
     logger.info("Запуск бота.")
-    # Инициализация приложения.
     application = ApplicationBuilder().token(settings.BOT_TOKEN).build()
-
-    # Обработчик команды /start
-    start_handler = CommandHandler('start', start)
-    application.add_handler(start_handler)
-
-    application.add_handler(CommandHandler("register", register))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(MessageHandler(filters.Text(["Админ зона"]), admin_zone))
+    application.add_handler(MessageHandler(filters.Text(["Назад"]), back_to_main))
+    application.add_handler(MessageHandler(filters.Text(["Зарегистрировать"]), register))
+    application.add_handler(MessageHandler(filters.Text(["Мои станции"]), my_stations))
     application.add_handler(CallbackQueryHandler(register_handler))
-
-    # Обработчики для выбора станции отправления и станции прибытия
-    departure_station_handler = CallbackQueryHandler(handle_departure_station, pattern=r'^s\d+$')
-    arrival_station_handler = CallbackQueryHandler(handle_arrival_station, pattern=r'^m\d+$')
-
-    application.add_handler(departure_station_handler)
-    application.add_handler(arrival_station_handler)
-
-    # Обработчик неизвестных команд
-    echo_command_handler = MessageHandler(filters.COMMAND, not_known_command)
-    application.add_handler(echo_command_handler)
-
-    # Обработчик неизвестных сообщений
-    echo_handler = MessageHandler(filters.TEXT, not_known_message)
-    application.add_handler(echo_handler)
 
     logger.info("Бот запущен.")
     application.run_polling()
+
+
+if __name__ == '__main__':
+    start_bot()
