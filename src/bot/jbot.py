@@ -1,22 +1,58 @@
 from logger import logger
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton
 from telegram.ext import (ApplicationBuilder, ContextTypes, CommandHandler,
-                          MessageHandler, filters, CallbackQueryHandler
+                          MessageHandler, filters, CallbackQueryHandler, ConversationHandler
                           )
 
 from src.init_app import get_app_data
 from src.settings import settings
 
 
-async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
+STATION_SELECTION, DIRECTION_SELECTION = range(2)
+
+
+async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """В начале разговора узнать какую станцию из предложенного списка зарегистрировать."""
     stations = get_app_data().controller.get_available_for_registration_stations()
-    departure_buttons = [[InlineKeyboardButton(station_name, callback_data=station_code)] for station_name, station_code in stations]
-    reply_markup = InlineKeyboardMarkup(departure_buttons)
+    departure_buttons = [[KeyboardButton(station_name)] for station_name, station_code in stations]
+
+    await update.message.reply_text(
+        "Какую станцию необходимо зарегистрировать?",
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=departure_buttons,
+            one_time_keyboard=True,
+            input_field_placeholder="Станция?",
+            resize_keyboard=True
+        ),
+    )
+
+    return STATION_SELECTION
+
+
+async def select_station(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    context.user_data['station'] = query.data
+
+    directions = ["North", "South", "East", "West"]
+    direction_buttons = [[InlineKeyboardButton(direction, callback_data=direction)] for direction in directions]
+    reply_markup = InlineKeyboardMarkup(direction_buttons)
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Какую станцию зарегистрировать? Осталось - 5",
+        text="Выберите направление",
         reply_markup=reply_markup
     )
+    return DIRECTION_SELECTION
+
+
+async def select_direction(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    context.user_data['direction'] = query.data
+    get_app_data().controller.register_new_station(context.user_data['station'])
+    print("Направление", context.user_data['direction'])
+    return ConversationHandler.END
 
 
 async def register_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -56,7 +92,7 @@ async def my_stations(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         else:
             await update.message.reply_text('У вас нет зарегистрированных станций.')
     else:
-        keyboard = [[InlineKeyboardButton(str(station), callback_data='noop')] for station in stations]
+        keyboard = [[InlineKeyboardButton(station[0], callback_data='noop')] for station in stations]
         keyboard.append([InlineKeyboardButton("Назад", callback_data='back_to_main')])
         reply_markup = InlineKeyboardMarkup(keyboard)
 
