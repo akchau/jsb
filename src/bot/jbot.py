@@ -139,7 +139,6 @@ def start_bot():
     application.add_handler(MessageHandler(filters.Text(["Зарегистрировать"]), register))
     application.add_handler(MessageHandler(filters.Text(["Мои станции"]), my_stations))
     application.add_handler(CallbackQueryHandler(register_handler))
-
     logger.info("Бот запущен.")
     application.run_polling()
 
