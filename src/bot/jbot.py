@@ -11,9 +11,10 @@ from src.settings import settings
 STATION_SELECTION, DIRECTION_SELECTION = range(2)
 
 
-async def register(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def register_new_station(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """В начале разговора узнать какую станцию из предложенного списка зарегистрировать."""
-    stations = get_app_data().controller.get_available_for_registration_stations()
+    stations = await get_app_data().controller.get_available_for_registration_stations()
+
     departure_buttons = [[KeyboardButton(station_name)] for station_name, station_code in stations]
 
     await update.message.reply_text(
