@@ -1,12 +1,13 @@
-from src.controller.controller_types import Station
-from src.services.api_client.core import TransportApiClient
-from src.services.db_client.core import DbClient
+from src.controller.exc import NotAvailable
+from src.services.api_client.api_client_types import StationsList, Station
+from src.services.api_client.core import ApiInteractor
+from src.services.db_client.core import RegisteredStationsDbClient
 
 
 class ScheduleController:
 
-    def __init__(self, api_client: TransportApiClient, entity: DbClient):
-        self.__api_client = api_client
+    def __init__(self, api_interactor: ApiInteractor, entity: RegisteredStationsDbClient):
+        self.__api_interactor = api_interactor
         self.__entity = entity
 
     # def get_schedule(self, arrived_station, departure_station):
@@ -15,21 +16,24 @@ class ScheduleController:
     # def get_arrived_stations(self):
     #     self.__api_client.get_stations()
 
-    def get_all_stations(self):
-        thread_uid = self.__api_client.get_schedule_from_station()
-        return self.__api_client.get_stations(thread_uid)
+    async def get_available_for_registration_stations(self) -> StationsList:
+        """
+        Получение списка станций доступных для регистрации.
+        """
+        all_stations_of_base_branch: StationsList = await self.__api_interactor.list_available_stations()
+        already_registered_stations_codes: list[str] = self.__entity.get_registered_stations_codes()
+        return [station for station in all_stations_of_base_branch
+                if station[1] not in already_registered_stations_codes]
 
-    def get_available_for_registration_stations(self):
-        all_stations = self.get_all_stations()
-        return [station for station in all_stations if station[1] not in self.__entity.get_registered_stations_codes()]
+    async def register_new_station(self, station_code: str) -> None:
+        """
+        Регистрация новой станции.
+        """
+        station: Station = await self.__api_interactor.get_station(station_code)
+        if station is not None:
+            self.__entity.register_station(station)
+        else:
+            raise NotAvailable("Такая станция недоступна.")
 
-    def register_new_station(self, station_code):
-        stations = self.get_all_stations()
-        for station in stations:
-            if station[1] == station_code:
-                print("Целевая станция обнаружена", station)
-                self.__entity.register_station(station)
-                break
-
-    def get_registered_stations(self):
+    async def get_registered_stations(self) -> StationsList:
         return self.__entity.get_registered_stations()

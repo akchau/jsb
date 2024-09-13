@@ -1,32 +1,70 @@
-from api_client import ApiClient
+from pydantic import ValidationError
+
+from api_client import ApiClient, RequestException
+
+from src.services.api_client.api_client_types import ScheduleFromBaseStation, StationsOfThread, StationsList, Station
+from src.services.api_client.exc import ApiError
 
 
 class TransportApiClient(ApiClient):
 
-    def get_schedule_from_station(self):
-        return self.transport.get(
+    CONTENT_TYPE = {"Content-Type": "application/json"}
+
+    async def get_branch_uid(self) -> str:
+        """
+        Запрос, кода ветки базовой станции.
+        """
+        result = self.transport.get(
             path="schedule/",
-            headers={
-                "Content-Type": "application/json"
-            },
+            headers=self.CONTENT_TYPE,
             params={
                 "apikey": self.store["api_key"],
-                "station": "s9601675",
+                "station": self.store["base_station_code"],
                 "transport_types": "suburban"
             }
-        )["schedule"][0]["thread"]["uid"]
+        )
+        return ScheduleFromBaseStation.parse_obj(result).get_thread_uid()
 
-    def get_stations(self, thread_uid):
+    async def get_stations_of_thread(self, thread_uid) -> StationsList:
+        """
+        Запрос, станций из ветки.
+        """
         all_stations_data = self.transport.get(
             path="thread/",
-            headers={
-                "Content-Type": "application/json"
-            },
+            headers=self.CONTENT_TYPE,
             params={
                 "apikey": self.store["api_key"],
                 "uid": thread_uid
             }
-        )["stops"]
-        return [(station["station"]["title"], station["station"]["code"]) for station in all_stations_data]
+        )
+        return StationsOfThread.parse_obj(all_stations_data).get_stations()
 
-    # def get_schedule(self):
+
+class ApiInteractor:
+    """
+    Интерактор для работы с API.
+    """
+    def __init__(self, api_client: TransportApiClient):
+        self.__api_client = api_client
+
+    async def list_available_stations(self) -> StationsList:
+        """
+        Получение списка станций или станции по коду.
+        """
+        try:
+            thread_uid = await self.__api_client.get_branch_uid()
+            return await self.__api_client.get_stations_of_thread(thread_uid)
+        except RequestException as e:
+            raise ApiError(str(e))
+        except ValidationError:
+            raise ApiError("Ошибка валидации ответа API")
+
+    async def get_station(self, code: str) -> Station | None:
+        """
+        Получение станции по коду.
+        """
+        all_stations: StationsList = await self.list_available_stations()
+        find_station = [station for station in all_stations if station[1] == code]
+        if len(find_station) == 0:
+            return None
+        return find_station[0]
