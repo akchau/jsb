@@ -3,9 +3,9 @@ import logging
 from dataclasses import dataclass
 from typing import Type
 
-from src.controller.core import ScheduleController
+from src.controller import ScheduleController, controller_types
 from src.services.api_client.core import TransportApiClient, ApiInteractor
-from src.services.db_client.core import RegisteredStationsDbClient
+from src.services.db_client import RegisteredStationsDbClient
 from src.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,10 @@ __api_client = AppDataClasses.api_client_class(
     store={
         "api_key": settings.API_KEY,
         "base_station_code": settings.BASE_STATION_CODE
-    })
+    },
+    base_connection_timeout=20,
+    base_reading_timeout=1000
+)
 
 __api_interactor = AppDataClasses.api_interactor_class(__api_client)
 
@@ -56,4 +59,11 @@ def get_app_data() -> AppDataType:
     return AppDataType(controller=__controller)
 
 
-print(asyncio.run(__api_client.get_stations_of_thread("7510x7509_0_9601102_g24_4")))
+# print(asyncio.run(__api_interactor.get_all_stations_for_base_stations_thread()))
+# print(asyncio.run(__entity.register_station(controller_types.Station(code="121212", title="dffdsa", direction=controller_types.StationsDirection.FROM_MOSCOW).dict())))
+# print(asyncio.run(__entity.get_all_registered_stations(direction=controller_types.StationsDirection.FROM_MOSCOW)))
+# print(asyncio.run(__entity.move_station("121212", controller_types.StationsDirection.FROM_MOSCOW)))
+# print(asyncio.run(__entity.get_all_registered_stations(direction=controller_types.StationsDirection.TO_MOSCOW)))
+# print(asyncio.run(__entity.register_station(controller_types.Station(code="121212", title="dffdsa", direction=controller_types.StationsDirection.FROM_MOSCOW).dict())))
+# print(asyncio.run(__entity.get_all_registered_stations(direction=controller_types.StationsDirection.FROM_MOSCOW)))
+# print(asyncio.run(__entity.delete_station("121212")))

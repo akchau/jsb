@@ -5,6 +5,7 @@ from telegram.ext import (ApplicationBuilder, ContextTypes, CommandHandler,
                           )
 
 from src.init_app import get_app_data
+from src.services.api_client.api_client_types import StationsList
 from src.settings import settings
 
 
@@ -13,7 +14,7 @@ STATION_SELECTION, DIRECTION_SELECTION = range(2)
 
 async def register_new_station(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """В начале разговора узнать какую станцию из предложенного списка зарегистрировать."""
-    stations = await get_app_data().controller.get_available_for_registration_stations()
+    stations: StationsList = await get_app_data().controller.get_available_for_registration_stations()
 
     departure_buttons = [[KeyboardButton(station_name)] for station_name, station_code in stations]
 
@@ -51,8 +52,7 @@ async def select_direction(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     context.user_data['direction'] = query.data
-    get_app_data().controller.register_new_station(context.user_data['station'])
-    print("Направление", context.user_data['direction'])
+    await get_app_data().controller.register_new_station(context.user_data['station'])
     return ConversationHandler.END
 
 

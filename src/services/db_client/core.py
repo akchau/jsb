@@ -2,7 +2,8 @@ from typing import TypeVar, Generic
 
 from mongo_db_client import MongoDbTransport
 
-from src.services.db_client.exc import ExistException
+from src.controller.controller_types import StationsDirection
+from src.services.db_client.exc import ExistException, NotExistException, DbClientException
 
 
 Station = TypeVar("Station")
@@ -15,29 +16,72 @@ class RegisteredStationsDbClient(Generic[Station]):
     def __init__(self, db_name, db_host, dp_port, db_user, db_password):
         self.__transport = MongoDbTransport(db_name, db_user, db_password, db_host, dp_port)
 
-    def get_registered_stations(self) -> list[Station]:
-        """
-        Список зарегистрированных станций.
-        :return:
-        """
-        return [
-            tuple(exist_station["data"])
-            for exist_station in self.__transport.get_list(collection_name=self.STATIONS_COLLECTION_NAME)
-        ]
+    async def __get_station_by_code_and_direction(self, code: str, direction: StationsDirection) -> dict | None:
+        all_stations = self.__transport.get_list(collection_name=self.STATIONS_COLLECTION_NAME)
+        result = [station for station in all_stations
+                  if station["code"] == code and station["direction"] == direction]
+        if len(result) == 0:
+            return None
+        return result[0]
 
-    def register_station(self, station: Station):
+    async def get_all_registered_stations(self, direction: StationsDirection) -> list[dict]:
+        all_stations = self.__transport.get_list(collection_name=self.STATIONS_COLLECTION_NAME)
+        return [station for station in all_stations
+                if station["direction"] == direction]
+
+    async def register_station(self, station: dict) -> dict:
         """
         Зарегистрировать новую станцию.
         """
-        if station not in self.get_registered_stations():
-            self.__transport.post(self.STATIONS_COLLECTION_NAME, {"data": tuple(station)})
+
+        station_code = station["code"]
+        station_direction = station["direction"]
+
+        this_station = await self.__get_station_by_code_and_direction(station_code, station_direction)
+        if this_station is None:
+            self.__transport.post(self.STATIONS_COLLECTION_NAME, station)
+            created_station = await self.__get_station_by_code_and_direction(station_code, station_direction)
+            if created_station is None:
+                raise DbClientException("Станция не зарегистриоовалась!")
+            return created_station
         else:
             raise ExistException
 
-    def get_registered_stations_codes(self) -> list[str]:
-        registered_stations = self.get_registered_stations()
-        return [
-            exist_station[1]
-            for exist_station in registered_stations
-        ]
+    async def delete_station(self, code: str, direction: StationsDirection) -> dict:
+        """
+        Удалить станцию.
+        """
 
+        station = await self.__get_station_by_code_and_direction(code, direction)
+
+        if station:
+            self.__transport.delete(collection_name=self.STATIONS_COLLECTION_NAME,
+                                    instance_id=station["_id"])
+            deleted_station = await self.__get_station_by_code_and_direction(code, direction)
+            if deleted_station:
+                raise DbClientException("Станция не удалилась")
+            return station
+        else:
+            raise NotExistException
+
+    async def move_station(self, code: str, direction: StationsDirection) -> dict:
+        """
+        Переместить станцию.
+        """
+        station = await self.__get_station_by_code_and_direction(code, direction)
+        if station:
+            self.__transport.update_field(
+                collection_name=self.STATIONS_COLLECTION_NAME,
+                field_name="direction",
+                new_value=(StationsDirection.TO_MOSCOW if station["direction"] == StationsDirection.FROM_MOSCOW \
+                           else StationsDirection.FROM_MOSCOW),
+                instance_id=station["_id"])
+            updated_station = self.__transport.get(
+                    collection_name=self.STATIONS_COLLECTION_NAME,
+                    instance_id=station["_id"]
+            )
+            if updated_station is None or updated_station["direction"] == station["direction"]:
+                raise DbClientException("Поле не обновилось")
+            return updated_station
+        else:
+            raise NotExistException

@@ -1,10 +1,6 @@
 from pydantic import BaseModel
 
 
-Station = tuple[str, str]
-StationsList = list[Station]
-
-
 class ThreadInfo(BaseModel):
     uid: str
 
@@ -12,28 +8,34 @@ class ThreadInfo(BaseModel):
 class Schedule(BaseModel):
     thread: ThreadInfo
 
+    def get_uid(self):
+        return self.thread.uid
+
 
 class ScheduleFromBaseStation(BaseModel):
     schedule: list[Schedule]
 
-    def get_thread_uid(self, number_of_thread=1) -> str:
-        return self.schedule[number_of_thread].thread.uid
+    def get_thread_uid(self, number_of_thread=0) -> str:
+        return self.schedule[number_of_thread].get_uid()
 
 
 class StationInfo(BaseModel):
     code: str
     title: str
 
-    def to_tuple(self) -> Station:
-        return self.title, self.code
-
 
 class StopInfo(BaseModel):
     station: StationInfo
 
+    def get_info(self):
+        return self.station.dict()
 
-class StationsOfThread(BaseModel):
+
+class ThreadData(BaseModel):
     stops: list[StopInfo]
 
-    def get_stations(self) -> StationsList:
-        return [stop.station.to_tuple() for stop in self.stops]
+    def ext_get_stations(self) -> list[dict]:
+        return [
+            station.get_info()
+            for station in self.stops
+        ]
