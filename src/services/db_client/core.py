@@ -10,11 +10,16 @@ Station = TypeVar("Station")
 
 
 class RegisteredStationsDbClient(Generic[Station]):
+    """
+    Клиент зарегистрированных станций.
+
+    - Получение списка станций.
+    """
 
     STATIONS_COLLECTION_NAME = "stations"
 
-    def __init__(self, db_name, db_host, dp_port, db_user, db_password):
-        self.__transport = MongoDbTransport(db_name, db_user, db_password, db_host, dp_port)
+    def __init__(self, db_name, db_host, dp_port, db_user, db_password, _transport_class=MongoDbTransport):
+        self.__transport = _transport_class(db_name, db_user, db_password, db_host, dp_port)
 
     async def __get_station_by_code_and_direction(self, code: str, direction: StationsDirection) -> dict | None:
         all_stations = self.__transport.get_list(collection_name=self.STATIONS_COLLECTION_NAME)
@@ -25,15 +30,18 @@ class RegisteredStationsDbClient(Generic[Station]):
         return result[0]
 
     async def get_all_registered_stations(self, direction: StationsDirection) -> list[dict]:
-        all_stations = self.__transport.get_list(collection_name=self.STATIONS_COLLECTION_NAME)
-        return [station for station in all_stations
-                if station["direction"] == direction]
+        """
+        Получить все зарегестрированные станции.
+        :param direction: Направление, в котором ищутся зарегестрированные станции.
+        :return: Список станций, зарегистрированных в данном направлении.
+        """
+        all_stations: list[dict] = self.__transport.get_list(collection_name=self.STATIONS_COLLECTION_NAME)
+        return [station for station in all_stations if station["direction"] == direction]
 
     async def register_station(self, station: dict) -> dict:
         """
         Зарегистрировать новую станцию.
         """
-
         station_code = station["code"]
         station_direction = station["direction"]
 
