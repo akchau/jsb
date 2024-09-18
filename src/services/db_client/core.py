@@ -36,6 +36,7 @@ class RegisteredStationsDbClient(Generic[Station]):
         :param direction: Направление, в котором ищутся зарегестрированные станции.
         :return: Список станций, зарегистрированных в данном направлении.
         """
+        # TODO тут можно проверять, что поле имеет атрибут direction
         all_stations: list[dict] = self.__transport.get_list(collection_name=self.STATIONS_COLLECTION_NAME)
         return [station for station in all_stations if station["direction"] == direction]
 
@@ -43,6 +44,7 @@ class RegisteredStationsDbClient(Generic[Station]):
         """
         Зарегистрировать станцию.
         """
+        #TODO прикрутить валидацию полей необходимых для работы клиента
         station_code = station["code"]
         station_direction = station["direction"]
 
