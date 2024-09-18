@@ -14,6 +14,7 @@ class RegisteredStationsDbClient(Generic[Station]):
     Клиент зарегистрированных станций.
 
     - Получение списка станций.
+    - Регистрация новой станции.
     """
 
     STATIONS_COLLECTION_NAME = "stations"
@@ -40,7 +41,7 @@ class RegisteredStationsDbClient(Generic[Station]):
 
     async def register_station(self, station: dict) -> dict:
         """
-        Зарегистрировать новую станцию.
+        Зарегистрировать станцию.
         """
         station_code = station["code"]
         station_direction = station["direction"]
