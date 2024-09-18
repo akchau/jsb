@@ -1,9 +1,7 @@
-from pprint import pprint
-
 from pydantic import ValidationError
 from api_client import ApiClient, RequestException
 
-from src.services.api_client.api_client_types import ScheduleFromBaseStation, StopInfo, ThreadData
+from src.services.api_client.api_client_types import ScheduleFromBaseStation, ThreadData
 from src.services.api_client.exc import ApiError
 
 
@@ -17,11 +15,12 @@ class TransportApiClient(ApiClient):
             path="schedule/",
             headers={"Content-Type": "application/json"},
             params={
-                "apikey": self.store["api_key"],
-                "station": self.store["base_station_code"],
+                "apikey": self.store.api_key,
+                "station": self.store.base_station_code,
                 "transport_types": "suburban"
             }
         )
+        print(result)
         return ScheduleFromBaseStation.parse_obj(result)
 
     async def get_thread_info(self, thread_uid: str) -> ThreadData:
@@ -32,7 +31,7 @@ class TransportApiClient(ApiClient):
             path="thread/",
             headers={"Content-Type": "application/json"},
             params={
-                "apikey": self.store["api_key"],
+                "apikey": self.store.api_key,
                 "uid": thread_uid
             }
         )

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Type
 
 from src.controller import ScheduleController, controller_types
+from src.services.api_client.api_client_types import StoreType
 from src.services.api_client.core import TransportApiClient, ApiInteractor
 from src.services.db_client import RegisteredStationsDbClient
 from src.settings import settings
@@ -34,12 +35,7 @@ AppDataClasses = AppDataClassesType(
 __api_client = AppDataClasses.api_client_class(
     base_url=settings.API_BASE_URL,
     api_prefix="v3.0",
-    store={
-        "api_key": settings.API_KEY,
-        "base_station_code": settings.BASE_STATION_CODE
-    },
-    base_connection_timeout=20,
-    base_reading_timeout=1000
+    store=StoreType(api_key=settings.API_KEY, base_station_code=settings.BASE_STATION_CODE)
 )
 
 __api_interactor = AppDataClasses.api_interactor_class(__api_client)
@@ -59,11 +55,11 @@ def get_app_data() -> AppDataType:
     return AppDataType(controller=__controller)
 
 
-# print(asyncio.run(__api_interactor.get_all_stations_for_base_stations_thread()))
-# print(asyncio.run(__entity.register_station(controller_types.Station(code="121212", title="dffdsa", direction=controller_types.StationsDirection.FROM_MOSCOW).dict())))
-# print(asyncio.run(__entity.get_all_registered_stations(direction=controller_types.StationsDirection.FROM_MOSCOW)))
-# print(asyncio.run(__entity.move_station("121212", controller_types.StationsDirection.FROM_MOSCOW)))
-# print(asyncio.run(__entity.get_all_registered_stations(direction=controller_types.StationsDirection.TO_MOSCOW)))
-# print(asyncio.run(__entity.register_station(controller_types.Station(code="121212", title="dffdsa", direction=controller_types.StationsDirection.FROM_MOSCOW).dict())))
-# print(asyncio.run(__entity.get_all_registered_stations(direction=controller_types.StationsDirection.FROM_MOSCOW)))
-# print(asyncio.run(__entity.delete_station("121212")))
+print(asyncio.run(__api_interactor.get_all_stations_for_base_stations_thread()))
+print(asyncio.run(__entity.register_station(controller_types.Station(code="121212", title="dffdsa", direction=controller_types.StationsDirection.FROM_MOSCOW).dict())))
+print(asyncio.run(__entity.get_all_registered_stations(direction=controller_types.StationsDirection.FROM_MOSCOW)))
+print(asyncio.run(__entity.move_station("121212", controller_types.StationsDirection.FROM_MOSCOW)))
+print(asyncio.run(__entity.get_all_registered_stations(direction=controller_types.StationsDirection.TO_MOSCOW)))
+print(asyncio.run(__entity.register_station(controller_types.Station(code="121212", title="dffdsa", direction=controller_types.StationsDirection.FROM_MOSCOW).dict())))
+print(asyncio.run(__entity.get_all_registered_stations(direction=controller_types.StationsDirection.FROM_MOSCOW)))
+print(asyncio.run(__entity.delete_station("121212", direction=controller_types.StationsDirection.FROM_MOSCOW)))

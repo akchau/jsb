@@ -5,63 +5,8 @@ from telegram.ext import (ApplicationBuilder, ContextTypes, CommandHandler,
                           )
 
 from src.init_app import get_app_data
-from src.services.api_client.api_client_types import StationsList
 from src.settings import settings
 
-
-STATION_SELECTION, DIRECTION_SELECTION = range(2)
-
-
-async def register_new_station(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """В начале разговора узнать какую станцию из предложенного списка зарегистрировать."""
-    stations: StationsList = await get_app_data().controller.get_available_for_registration_stations()
-
-    departure_buttons = [[KeyboardButton(station_name)] for station_name, station_code in stations]
-
-    await update.message.reply_text(
-        "Какую станцию необходимо зарегистрировать?",
-        reply_markup=ReplyKeyboardMarkup(
-            keyboard=departure_buttons,
-            one_time_keyboard=True,
-            input_field_placeholder="Станция?",
-            resize_keyboard=True
-        ),
-    )
-
-    return STATION_SELECTION
-
-
-async def select_station(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    context.user_data['station'] = query.data
-
-    directions = ["North", "South", "East", "West"]
-    direction_buttons = [[InlineKeyboardButton(direction, callback_data=direction)] for direction in directions]
-    reply_markup = InlineKeyboardMarkup(direction_buttons)
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="Выберите направление",
-        reply_markup=reply_markup
-    )
-    return DIRECTION_SELECTION
-
-
-async def select_direction(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    context.user_data['direction'] = query.data
-    await get_app_data().controller.register_new_station(context.user_data['station'])
-    return ConversationHandler.END
-
-
-async def register_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    station_code = query.data
-    await query.answer()
-    get_app_data().controller.register_new_station(station_code)
-    await admin_zone(update, context)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

@@ -1,6 +1,11 @@
 from pydantic import BaseModel
 
 
+class StoreType(BaseModel):
+    api_key: str
+    base_station_code: str
+
+
 class ThreadInfo(BaseModel):
     uid: str
 

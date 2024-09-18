@@ -52,18 +52,18 @@ class ScheduleController:
         )
         return not_registered_stations_in_target_direction.ext_get_in_list_tuple()
 
-    async def register_new_station(self, direction: controller_types.StationsDirection, code: str) -> controller_types.StationInTuple:
+    async def register_new_station(self, direction: controller_types.StationsDirection, code: str) -> None:
         """
         Регистрация новой станции.
         """
         try:
             new_station: controller_types.Station = await self.service_interface.get_station_by_api(direction, code)
-            return self.__entity.register_station(new_station).to_tuple()
+            await self.__entity.register_station(new_station.dict())
         except db_exc.ExistException:
             pass
 
-    async def delete_station(self, code: str) -> None:
-        await self.__entity.delete_station(code)
+    async def delete_station(self, direction: controller_types.StationsDirection, code: str) -> None:
+        await self.__entity.delete_station(code, direction)
 
-    async def move_station(self, code: str) -> None:
-        await self.__entity.move_station(code)
+    async def move_station(self, direction: controller_types.StationsDirection, code: str) -> None:
+        await self.__entity.move_station(code, direction)
