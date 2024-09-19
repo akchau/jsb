@@ -3,8 +3,9 @@ from unittest.mock import Mock
 
 from src.controller.controller_types import StationsDirection
 from src.services.db_client import RegisteredStationsDbClient
+from . import conftest
 
-TEST_DB_NAME = "db_name"
+
 TEST_DB_HOST = "host"
 TEST_DB_PORT = 80
 TEST_DB_USER = "username"
@@ -21,7 +22,7 @@ class TestGetAllRegisteredStations(unittest.IsolatedAsyncioTestCase):
         self.mock_transport = Mock()
         mock_transport_class.return_value = self.mock_transport
         self.client = RegisteredStationsDbClient(
-            db_name=TEST_DB_NAME,
+            db_name=conftest.TEST_DB_NAME,
             db_host=TEST_DB_HOST,
             db_user=TEST_DB_USER,
             db_password=TEST_DB_PASSWORD,
@@ -30,11 +31,9 @@ class TestGetAllRegisteredStations(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_good_case(self):
-
         """
         Транспорт вернул список.
         """
-
         self.mock_transport.get_list.side_effect = [
             [
                 {"direction": StationsDirection.FROM_MOSCOW, "id": "one"},
@@ -52,11 +51,9 @@ class TestGetAllRegisteredStations(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_good_case_empty(self):
-
         """
         Транспорт ничего не вернул.
         """
-
         self.mock_transport.get_list.side_effect = [[]]
         result = await self.client.get_all_registered_stations(direction=StationsDirection.FROM_MOSCOW)
         self.assertEqual(result, [])
@@ -65,7 +62,6 @@ class TestGetAllRegisteredStations(unittest.IsolatedAsyncioTestCase):
         """
         Транспорт вернул список без целевого направления.
         """
-
         self.mock_transport.get_list.side_effect = [
             [
                 {"direction": StationsDirection.FROM_MOSCOW, "id": "one"},

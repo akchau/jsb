@@ -1,10 +1,11 @@
 from typing import TypeVar, Generic
 
 from mongo_db_client import MongoDbTransport
+from pydantic import ValidationError
 
 from src.controller.controller_types import StationsDirection
-from src.services.db_client.exc import ExistException, NotExistException, DbClientException
-
+from src.services.db_client.db_client_types import DbClientAuthModel
+from src.services.db_client.exc import ExistException, NotExistException, DbClientException, AuthError
 
 Station = TypeVar("Station")
 
@@ -22,7 +23,18 @@ class RegisteredStationsDbClient(Generic[Station]):
 
     def __init__(self, db_name: str, db_host: str, dp_port: int, db_user: str, db_password: str,
                  _transport_class=MongoDbTransport):
-        self.__transport = _transport_class(db_name, db_user, db_password, db_host, dp_port)
+        try:
+            clean_data = DbClientAuthModel(
+                db_name=db_name,
+                db_host=db_host,
+                db_port=dp_port,
+                db_user=db_user,
+                db_password=db_password
+            )
+        except ValidationError:
+            raise AuthError("Невалидные данные для подключения к бд")
+
+        self.__transport = _transport_class(**clean_data.dict())
 
     async def __get_station_by_code_and_direction(self, code: str, direction: StationsDirection) -> dict | None:
         all_stations = self.__transport.get_list(collection_name=self.STATIONS_COLLECTION_NAME)

@@ -4,8 +4,9 @@ from unittest.mock import Mock
 from src.controller.controller_types import StationsDirection
 from src.services.db_client import RegisteredStationsDbClient
 from src.services.db_client.exc import NotExistException, DbClientException
+from . import conftest
 
-TEST_DB_NAME = "db_name"
+
 TEST_DB_HOST = "host"
 TEST_DB_PORT = 80
 TEST_DB_USER = "username"
@@ -24,7 +25,7 @@ class TestDeleteStation(unittest.IsolatedAsyncioTestCase):
         self.mock_transport = Mock()
         mock_transport_class.return_value = self.mock_transport
         self.client = RegisteredStationsDbClient(
-            db_name=TEST_DB_NAME,
+            db_name=conftest.TEST_DB_NAME,
             db_host=TEST_DB_HOST,
             db_user=TEST_DB_USER,
             db_password=TEST_DB_PASSWORD,
