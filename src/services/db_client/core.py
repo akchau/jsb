@@ -9,6 +9,7 @@ from src.services.db_client.exc import ExistException, NotExistException, DbClie
 Station = TypeVar("Station")
 
 
+# TODO перенести слой с подтверждением удаления  в отдельный слой, а клиент только для логики БД???
 class RegisteredStationsDbClient(Generic[Station]):
     """
     Клиент зарегистрированных станций.
@@ -19,7 +20,8 @@ class RegisteredStationsDbClient(Generic[Station]):
 
     STATIONS_COLLECTION_NAME = "stations"
 
-    def __init__(self, db_name, db_host, dp_port, db_user, db_password, _transport_class=MongoDbTransport):
+    def __init__(self, db_name: str, db_host: str, dp_port: int, db_user: str, db_password: str,
+                 _transport_class=MongoDbTransport):
         self.__transport = _transport_class(db_name, db_user, db_password, db_host, dp_port)
 
     async def __get_station_by_code_and_direction(self, code: str, direction: StationsDirection) -> dict | None:
@@ -43,6 +45,8 @@ class RegisteredStationsDbClient(Generic[Station]):
     async def register_station(self, station: dict) -> dict:
         """
         Зарегистрировать станцию.
+        :param station: Данные станции.
+        :return: Данные станции.
         """
         #TODO прикрутить валидацию полей необходимых для работы клиента
         station_code = station["code"]
@@ -61,10 +65,12 @@ class RegisteredStationsDbClient(Generic[Station]):
     async def delete_station(self, code: str, direction: StationsDirection) -> dict:
         """
         Удалить станцию.
+        :param code: Код станци.
+        :param direction: Направление, удаляемой станции.
+        :return: Данные станции.
         """
 
         station = await self.__get_station_by_code_and_direction(code, direction)
-
         if station:
             self.__transport.delete(collection_name=self.STATIONS_COLLECTION_NAME,
                                     instance_id=station["_id"])
@@ -78,6 +84,9 @@ class RegisteredStationsDbClient(Generic[Station]):
     async def move_station(self, code: str, direction: StationsDirection) -> dict:
         """
         Переместить станцию.
+        :param code: Код станци.
+        :param direction: Направление, удаляемой станции.
+        :return: Обновленные данные станции.
         """
         station = await self.__get_station_by_code_and_direction(code, direction)
         if station:
