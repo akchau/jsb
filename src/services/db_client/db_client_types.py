@@ -15,4 +15,4 @@ class DbClientAuthModel(BaseModel):
     def check_url(cls, v):
         if not re.match(r'^(mongodb|mongodb\+srv)', v):
             raise ValueError('Имя БД должно быть mongodb или mongodb+srv')
-
+        return v

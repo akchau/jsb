@@ -1,44 +1,37 @@
 import sys
 
-from logger import logger
 from src.bot.jbot import start_bot
-from test import start_tests
 
 
-START_COMMAND_DICT = {
-    "go": ("Запуск бота", start_bot),
-    "test": ("Запуск тестов", start_tests)
+class CommandError(Exception):
+    pass
+
+
+REGISTERED_COMMANDS = {
+    "go": start_bot
 }
 
-HELP_ARGUMENTS = ["-h", "--h", "-help", "--help"]
 
+def main():
+    args = sys.argv
+    args_len = len(args)
 
-def print_help():
-    available_command = ""
-    for current_command, command_description in START_COMMAND_DICT.items():
-        available_command = f"{available_command}\npython main.py {current_command} - {command_description[0]}"
-    logger.debug(f"Возможные команды:\n{available_command}\n")
+    if args_len == 1:
+        raise CommandError(
+            f"Вы должны указать аргументы при обращении к файлу {__name__}. "
+            f"Возможные аргументы: {list(REGISTERED_COMMANDS.keys())}"
+        )
+    elif args_len >= 2:
+        command = args[1]
+        func = REGISTERED_COMMANDS.get(command, None)
+
+        if func is None:
+            raise CommandError(
+                f"Данной команды не существует. "
+                f"Возможные команды: {list(REGISTERED_COMMANDS.keys())}"
+            )
+        func()
 
 
 if __name__ == "__main__":
-    console_arguments = sys.argv
-    command = "python " + " ".join(console_arguments)
-    if console_arguments[0] == "c:\\dev\\j_bot\\main.py":
-        logger.debug("Запуск приложения в DEBUG режиме.")
-        start_tests()
-    elif len(console_arguments) == 1:
-        print_help()
-    elif len(console_arguments) == 2:
-        flag = console_arguments[1]
-        if flag in START_COMMAND_DICT.keys():
-            logger.debug(f"Получена команда {command}.")
-            logger.info(START_COMMAND_DICT[console_arguments[1]][0])
-            START_COMMAND_DICT[console_arguments[1]][1]()
-        elif flag in HELP_ARGUMENTS:
-            print_help()
-        else:
-            logger.debug(f"Аргумент комманды {flag} неизвестен")
-            print_help()
-    else:
-        logger.debug(f"Неизвестная команда: {command}")
-        print_help()
+    main()

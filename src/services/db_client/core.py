@@ -33,7 +33,6 @@ class RegisteredStationsDbClient(Generic[Station]):
             )
         except ValidationError:
             raise AuthError("Невалидные данные для подключения к бд")
-
         self.__transport = _transport_class(**clean_data.dict())
 
     async def __get_station_by_code_and_direction(self, code: str, direction: StationsDirection) -> dict | None:
