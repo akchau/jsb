@@ -90,11 +90,14 @@ class RegisteredStationsDbClient(Generic[Station]):
         """
         station = await self.__get_station_by_code_and_direction(code, direction)
         if station:
+
+            new_value = (StationsDirection.TO_MOSCOW if station["direction"] == StationsDirection.FROM_MOSCOW \
+                         else StationsDirection.FROM_MOSCOW)
+
             self.__transport.update_field(
                 collection_name=self.STATIONS_COLLECTION_NAME,
                 field_name="direction",
-                new_value=(StationsDirection.TO_MOSCOW if station["direction"] == StationsDirection.FROM_MOSCOW \
-                           else StationsDirection.FROM_MOSCOW),
+                new_value=new_value,
                 instance_id=station["_id"])
             updated_station = self.__transport.get(
                     collection_name=self.STATIONS_COLLECTION_NAME,
