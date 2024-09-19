@@ -3,6 +3,7 @@ from unittest.mock import Mock
 
 from src.controller.controller_types import StationsDirection
 from src.services.db_client import RegisteredStationsDbClient
+from src.services.db_client.exc import ExistException, DbClientException
 
 TEST_DB_NAME = "db_name"
 TEST_DB_HOST = "host"
@@ -50,3 +51,37 @@ class TestRegisterStation(unittest.IsolatedAsyncioTestCase):
             "stations",
             {"code": "one", "direction": StationsDirection.FROM_MOSCOW}
         )
+
+    async def test_already_exist(self):
+        """
+        Такая запись уже существует.
+        """
+        self.mock_transport.get_list.side_effect = [
+            [
+                {"code": "one", "direction": StationsDirection.FROM_MOSCOW},
+                {"code": "two", "direction": StationsDirection.FROM_MOSCOW}
+            ]
+        ]
+        with self.assertRaises(ExistException):
+            await self.client.register_station(station={"code": "one", "direction": StationsDirection.FROM_MOSCOW})
+        self.mock_transport.post.assert_not_called()
+
+    async def test_not_create(self):
+        """
+        Запись не создалась.
+        """
+        self.mock_transport.get_list.side_effect = [
+            [
+                {"code": "two", "direction": StationsDirection.FROM_MOSCOW}
+            ],
+            [
+                {"code": "two", "direction": StationsDirection.FROM_MOSCOW}
+            ]
+        ]
+        with self.assertRaises(DbClientException):
+            await self.client.register_station(station={"code": "one", "direction": StationsDirection.FROM_MOSCOW})
+        self.mock_transport.post.assert_called_with(
+            "stations",
+            {"code": "one", "direction": StationsDirection.FROM_MOSCOW}
+        )
+
