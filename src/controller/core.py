@@ -23,7 +23,7 @@ class ServiceInterface:
 
     async def get_all_registered_stations(self, direction: controller_types.StationsDirection) -> controller_types.StationsList:
         all_stations_from_db = await self.__entity.get_all_registered_stations(direction)
-        return controller_types.StationsList(stations=[controller_types.Station(**stop, direction=direction) for stop in all_stations_from_db])
+        return controller_types.StationsList(stations=[controller_types.Station(**stop) for stop in all_stations_from_db])
 
 
 class ScheduleController:

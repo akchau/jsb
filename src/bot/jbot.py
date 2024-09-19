@@ -8,6 +8,8 @@ from telegram.ext import (
     ConversationHandler,
 )
 
+from src.controller.controller_types import StationsDirection
+from src.init_app import get_app_data
 from src.settings import settings
 
 logging.basicConfig(
@@ -15,12 +17,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Define states
-SELECTING_ACTION, ADMIN_MENU, SCHEDULE, ADD_STATION, MY_STATIONS = range(5)
 
+SELECTING_ACTION, ADMIN_MENU, SCHEDULE, ADD_STATION, MY_STATIONS, FROM_MOSCOW, TO_MOSCOW, SELECT_DIRECTION, ADD_FROM_MOSCOW, ADD_TO_MOSCOW = range(10)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Display a menu with choices for the user."""
     buttons = [
         [
             InlineKeyboardButton(text="Админка", callback_data=str(ADMIN_MENU)),
@@ -37,9 +37,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     return SELECTING_ACTION
 
-
 async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Display admin submenu."""
     buttons = [
         [
             InlineKeyboardButton(text="Добавить станцию", callback_data=str(ADD_STATION)),
@@ -52,31 +50,81 @@ async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.callback_query.edit_message_text(text="Выберите действие:", reply_markup=keyboard)
     return ADMIN_MENU
 
-
 async def add_station(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handle the add station button."""
     buttons = [
+        [
+            InlineKeyboardButton(text="Из Москвы", callback_data=str(ADD_FROM_MOSCOW)),
+            InlineKeyboardButton(text="В Москву", callback_data=str(ADD_TO_MOSCOW)),
+        ],
         [InlineKeyboardButton(text="Назад", callback_data=str(ADMIN_MENU))]
     ]
     keyboard = InlineKeyboardMarkup(buttons)
     await update.callback_query.answer()
-    await update.callback_query.edit_message_text(text="Вы выбрали добавить станцию.", reply_markup=keyboard)
-    return ADD_STATION
+    await update.callback_query.edit_message_text(text="Выберите направление для добавления станции:", reply_markup=keyboard)
+    return SELECT_DIRECTION
 
+async def add_station_from_moscow(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    buttons = [
+        [InlineKeyboardButton(text="Назад", callback_data=str(ADD_STATION))]
+    ]
+    keyboard = InlineKeyboardMarkup(buttons)
+    await update.callback_query.answer()
+    await update.callback_query.edit_message_text(text="Вы выбрали добавить станцию из Москвы.", reply_markup=keyboard)
+    # Здесь добавьте вашу логику для добавления станций из Москвы
+    return ADD_FROM_MOSCOW
+
+async def add_station_to_moscow(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    buttons = [
+        [InlineKeyboardButton(text="Назад", callback_data=str(ADD_STATION))]
+    ]
+    keyboard = InlineKeyboardMarkup(buttons)
+    await update.callback_query.answer()
+    await update.callback_query.edit_message_text(text="Вы выбрали добавить станцию в Москву.", reply_markup=keyboard)
+    # Здесь добавьте вашу логику для добавления станций в Москву
+    return ADD_TO_MOSCOW
 
 async def my_stations(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handle the my stations button."""
     buttons = [
+        [
+            InlineKeyboardButton(text="Из Москвы", callback_data=str(FROM_MOSCOW)),
+            InlineKeyboardButton(text="В Москву", callback_data=str(TO_MOSCOW)),
+        ],
         [InlineKeyboardButton(text="Назад", callback_data=str(ADMIN_MENU))]
     ]
     keyboard = InlineKeyboardMarkup(buttons)
     await update.callback_query.answer()
-    await update.callback_query.edit_message_text(text="Вы выбрали мои станции.", reply_markup=keyboard)
+    await update.callback_query.edit_message_text(text="Выберите направление:", reply_markup=keyboard)
     return MY_STATIONS
 
+async def from_moscow(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    buttons = [
+        [InlineKeyboardButton(text="Назад", callback_data=str(MY_STATIONS))]
+    ]
+
+    stations = await get_app_data().controller.get_registered_stations(direction=StationsDirection.FROM_MOSCOW)
+    stations_names = [station[0] for station in stations]
+    text = "Станции из Москвы:\n" + "\n".join(stations_names)
+
+    keyboard = InlineKeyboardMarkup(buttons)
+    await update.callback_query.answer()
+    await update.callback_query.edit_message_text(text=text, reply_markup=keyboard)
+    return FROM_MOSCOW
+
+async def to_moscow(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    buttons = [
+        [InlineKeyboardButton(text="Назад", callback_data=str(MY_STATIONS))]
+    ]
+
+    stations = await get_app_data().controller.get_registered_stations(direction=StationsDirection.TO_MOSCOW)
+    stations_names = [station[0] for station in stations]
+    text = "Станции в Москву:\n" + "\n".join(stations_names)
+
+    keyboard = InlineKeyboardMarkup(buttons)
+    await update.callback_query.answer()
+    await update.callback_query.edit_message_text(text=text, reply_markup=keyboard)
+    return TO_MOSCOW
 
 async def schedule(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handle the schedule button."""
     buttons = [
         [InlineKeyboardButton(text="Назад", callback_data=str(SELECTING_ACTION))]
     ]
@@ -85,12 +133,9 @@ async def schedule(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.callback_query.edit_message_text(text="Вы выбрали расписание.", reply_markup=keyboard)
     return SCHEDULE
 
-
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """End Conversation by command."""
     await update.message.reply_text("ОК, пока!")
     return ConversationHandler.END
-
 
 def main() -> None:
     """Run the bot."""
@@ -111,8 +156,21 @@ def main() -> None:
             ADD_STATION: [
                 CallbackQueryHandler(admin, pattern="^" + str(ADMIN_MENU) + "$")
             ],
-            MY_STATIONS: [
+            SELECT_DIRECTION: [
+                CallbackQueryHandler(add_station_from_moscow, pattern="^" + str(ADD_FROM_MOSCOW) + "$"),
+                CallbackQueryHandler(add_station_to_moscow, pattern="^" + str(ADD_TO_MOSCOW) + "$"),
                 CallbackQueryHandler(admin, pattern="^" + str(ADMIN_MENU) + "$")
+            ],
+            MY_STATIONS: [
+                CallbackQueryHandler(from_moscow, pattern="^" + str(FROM_MOSCOW) + "$"),
+                CallbackQueryHandler(to_moscow, pattern="^" + str(TO_MOSCOW) + "$"),
+                CallbackQueryHandler(admin, pattern="^" + str(ADMIN_MENU) + "$")
+            ],
+            FROM_MOSCOW: [
+                CallbackQueryHandler(my_stations, pattern="^" + str(MY_STATIONS) + "$")
+            ],
+            TO_MOSCOW: [
+                CallbackQueryHandler(my_stations, pattern="^" + str(MY_STATIONS) + "$")
             ],
             SCHEDULE: [
                 CallbackQueryHandler(start, pattern="^" + str(SELECTING_ACTION) + "$")
