@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 (MAIN_MENU, ADMIN, REGISTER_STATION, REGISTER_STATION_FROM_MOSCOW, REGISTER_STATION_TO_MOSCOW,
- REGISTERED_STATIONS, REGISTERED_STATIONS_FROM_MOSCOW, REGISTERED_STATIONS_TO_MOSCOW, SCHEDULE) = range(10)
+ REGISTERED_STATIONS, REGISTERED_STATIONS_FROM_MOSCOW, REGISTERED_STATIONS_TO_MOSCOW, SCHEDULE, DEPARTURE_STATION) = range(10)
 
 
 async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -78,7 +78,8 @@ async def register_station_from_moscow(update: Update, context: ContextTypes.DEF
         StationsDirection.FROM_MOSCOW)
 
     buttons = [
-        [InlineKeyboardButton(text="Назад", callback_data=str(REGISTER_STATION))]
+        [InlineKeyboardButton(text="Назад", callback_data=str(REGISTER_STATION))],
+        [InlineKeyboardButton(text="Админка", callback_data=str(ADMIN))]
     ]
     keyboard = InlineKeyboardMarkup(buttons)
 
@@ -92,7 +93,8 @@ async def register_station_to_moscow(update: Update, context: ContextTypes.DEFAU
         StationsDirection.TO_MOSCOW)
 
     buttons = [
-        [InlineKeyboardButton(text="Назад", callback_data=str(REGISTER_STATION))]
+        [InlineKeyboardButton(text="Назад", callback_data=str(REGISTER_STATION))],
+        [InlineKeyboardButton(text="Админка", callback_data=str(ADMIN))]
     ]
     keyboard = InlineKeyboardMarkup(buttons)
     await update.callback_query.answer()
@@ -116,7 +118,8 @@ async def registered_stations(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 async def registered_stations_from_moscow(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     buttons = [
-        [InlineKeyboardButton(text="Назад", callback_data=str(REGISTERED_STATIONS))]
+        [InlineKeyboardButton(text="Назад", callback_data=str(REGISTERED_STATIONS))],
+        [InlineKeyboardButton(text="Админка", callback_data=str(ADMIN))]
     ]
 
     stations = await get_app_data().controller.get_registered_stations(direction=StationsDirection.FROM_MOSCOW)
@@ -131,7 +134,8 @@ async def registered_stations_from_moscow(update: Update, context: ContextTypes.
 
 async def registered_stations_to_moscow(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     buttons = [
-        [InlineKeyboardButton(text="Назад", callback_data=str(REGISTERED_STATIONS))]
+        [InlineKeyboardButton(text="Назад", callback_data=str(REGISTERED_STATIONS))],
+        [InlineKeyboardButton(text="Админка", callback_data=str(ADMIN))]
     ]
 
     stations = await get_app_data().controller.get_registered_stations(direction=StationsDirection.TO_MOSCOW)
@@ -154,6 +158,16 @@ async def schedule(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return SCHEDULE
 
 
+async def departure_station(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    buttons = [
+        [InlineKeyboardButton(text="Назад", callback_data=str(SCHEDULE))]
+    ]
+    keyboard = InlineKeyboardMarkup(buttons)
+    await update.callback_query.answer()
+    await update.callback_query.edit_message_text('Вы выбрали расписание.', reply_markup=keyboard)
+    return DEPARTURE_STATION
+
+
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.callback_query.answer()
     await update.callback_query.edit_message_text("ОК, пока!")
@@ -173,31 +187,42 @@ def start_bot() -> None:
 
             ],
             ADMIN: [
-                CallbackQueryHandler(register_station, pattern="^" + str(ADD_STATION) + "$"),
-                CallbackQueryHandler(my_stations, pattern="^" + str(MY_STATIONS) + "$"),
+                CallbackQueryHandler(register_station, pattern="^" + str(REGISTER_STATION) + "$"),
+                CallbackQueryHandler(registered_stations, pattern="^" + str(REGISTERED_STATIONS) + "$"),
                 CallbackQueryHandler(main_menu, pattern="^" + str(MAIN_MENU) + "$")
             ],
             REGISTER_STATION: [
                 CallbackQueryHandler(register_station_from_moscow, pattern="^" + str(REGISTER_STATION_FROM_MOSCOW) + "$"),
-                CallbackQueryHandler(add_station_to_moscow, pattern="^" + str(ADD_TO_MOSCOW) + "$"),
+                CallbackQueryHandler(register_station_to_moscow, pattern="^" + str(REGISTER_STATION_TO_MOSCOW) + "$"),
                 CallbackQueryHandler(admin, pattern="^" + str(ADMIN) + "$")
             ],
-            MY_STATIONS: [
-                CallbackQueryHandler(from_moscow, pattern="^" + str(FROM_MOSCOW) + "$"),
-                CallbackQueryHandler(to_moscow, pattern="^" + str(TO_MOSCOW) + "$"),
+            REGISTERED_STATIONS: [
+                CallbackQueryHandler(registered_stations_from_moscow, pattern="^" + str(REGISTERED_STATIONS_FROM_MOSCOW) + "$"),
+                CallbackQueryHandler(registered_stations_to_moscow, pattern="^" + str(REGISTERED_STATIONS_TO_MOSCOW) + "$"),
                 CallbackQueryHandler(admin, pattern="^" + str(ADMIN) + "$")
             ],
             REGISTER_STATION_FROM_MOSCOW: [
-                CallbackQueryHandler(my_stations, pattern="^" + str(MY_STATIONS) + "$"),
+                CallbackQueryHandler(register_station, pattern="^" + str(REGISTER_STATION) + "$"),
                 CallbackQueryHandler(admin, pattern="^" + str(ADMIN) + "$")
             ],
-            TO_MOSCOW: [
-                CallbackQueryHandler(my_stations, pattern="^" + str(MY_STATIONS) + "$"),
+            REGISTER_STATION_TO_MOSCOW: [
+                CallbackQueryHandler(register_station, pattern="^" + str(REGISTER_STATION) + "$"),
+                CallbackQueryHandler(admin, pattern="^" + str(ADMIN) + "$")
+            ],
+            REGISTERED_STATIONS_FROM_MOSCOW: [
+                CallbackQueryHandler(registered_stations, pattern="^" + str(REGISTERED_STATIONS) + "$"),
+                CallbackQueryHandler(admin, pattern="^" + str(ADMIN) + "$")
+            ],
+            REGISTERED_STATIONS_TO_MOSCOW: [
+                CallbackQueryHandler(registered_stations, pattern="^" + str(REGISTERED_STATIONS) + "$"),
                 CallbackQueryHandler(admin, pattern="^" + str(ADMIN) + "$")
             ],
             SCHEDULE: [
                 CallbackQueryHandler(main_menu, pattern="^" + str(MAIN_MENU) + "$")
             ],
+            DEPARTURE_STATION: [
+                CallbackQueryHandler(schedule, pattern="^" + str(SCHEDULE) + "$")
+            ]
         },
         fallbacks=[CommandHandler("stop", stop)],
     )
