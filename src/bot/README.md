@@ -1,2 +1,2 @@
 # Схема бота
-[Схема](docs/diagram.png)
+![Схема бота](docs/diagram.png)
