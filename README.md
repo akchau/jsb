@@ -6,9 +6,10 @@
 - При отправке расписания определяет тип поезда и его загруженность по встроенному алгоритму.
 ## Архитектура сервиса
 ![Архитектура](docs/architecture.png)
+Архитектура сервиса нарисована с помощью [сервиса](https://online.visual-paradigm.com)
 ## Бот
 ### Библиотека
 Для написания бота использована библиотека [`python-telegram-bot==20.5`](https://python-telegram-bot.org/)
 ### Cхема бота
 ![Схема бота](src/bot/docs/diagram.png)
-Диаграма бота нарисована с помощью сервиса - https://programforyou.ru/block-diagram-redactor
+Диаграма бота нарисована с помощью [сервиса](https://programforyou.ru/block-diagram-redactor)
