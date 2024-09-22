@@ -1,13 +1,63 @@
+import datetime
+import time
 from typing import TypeVar, Generic
 
 from mongo_db_client import MongoDbTransport
 from pydantic import ValidationError
 
 from src.controller.controller_types import StationsDirection
-from src.services.db_client.db_client_types import DbClientAuthModel
-from src.services.db_client.exc import ExistException, NotExistException, DbClientException, AuthError
+from src.services.db_client.base import BaseDbClient
+from src.services.db_client.db_client_types import DbClientAuthModel, ScheduleModel
+from src.services.db_client.exc import ExistException, NotExistException, DbClientException, AuthError, ModelError
 
 Station = TypeVar("Station")
+
+
+class ScheduleDbClient(BaseDbClient):
+
+    SCHEDULE_COLLECTION_NAME = "schedule"
+
+    async def get_schedule(self, departure_station_code: str, arrived_station_code) -> ScheduleModel | None:
+        """
+        Получение расписания по кодам станций
+
+        :param departure_station_code: Код станции отправления.
+        :param arrived_station_code: Код станции прибытия.
+        :return:
+        """
+        schedules = [ScheduleModel(**schedule, id=str(schedule["_id"]))
+                     for schedule in self._transport.get_list(self.SCHEDULE_COLLECTION_NAME)]
+        for schedule in schedules:
+            if (schedule.departure_station_code == departure_station_code and
+                    schedule.arrived_station_code == arrived_station_code):
+                return schedule
+        return None
+
+    async def write_schedule(self, departure_station_code: str, arrived_station_code: str,
+                             schedule_data: list[tuple]) -> ScheduleModel | None:
+        """
+        Зарегистрировать станцию.
+        """
+        try:
+            new_schedule = ScheduleModel(
+                arrived_station_code=arrived_station_code,
+                departure_station_code=departure_station_code,
+                update_time=datetime.datetime.now(),
+                schedule=schedule_data
+            )
+        except ValidationError:
+            raise ModelError("Ошибка при создании модели расписания.")
+
+        this_schedule = await self.get_schedule(new_schedule.departure_station_code,
+                                                new_schedule.arrived_station_code)
+        if this_schedule:
+            self._transport.delete(collection_name=self.SCHEDULE_COLLECTION_NAME, instance_id=this_schedule.id)
+        self._transport.post(self.SCHEDULE_COLLECTION_NAME, new_schedule.create_document())
+        created_schedule = await self.get_schedule(new_schedule.departure_station_code,
+                                                   new_schedule.arrived_station_code)
+        if created_schedule is None:
+            raise DbClientException("Расписание не добавлено!")
+        return created_schedule
 
 
 # TODO перенести слой с подтверждением удаления  в отдельный слой, а клиент только для логики БД???

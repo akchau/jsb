@@ -2,6 +2,10 @@ class DbClientException(Exception):
     pass
 
 
+class ModelError(Exception):
+    pass
+
+
 class AuthError(DbClientException):
     """
     Ошибка при аутентификации классов.

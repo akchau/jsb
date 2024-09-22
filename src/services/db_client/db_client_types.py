@@ -1,5 +1,8 @@
 # TODO Эту модель включить в стандартный пакет и обрабатывать. Пока не тестируем
+import datetime
 import re
+import time
+from typing import Optional
 
 from pydantic import BaseModel, validator
 
@@ -16,3 +19,16 @@ class DbClientAuthModel(BaseModel):
         if not re.match(r'^(mongodb|mongodb\+srv)', v):
             raise ValueError('Имя БД должно быть mongodb или mongodb+srv')
         return v
+
+
+class ScheduleModel(BaseModel):
+    arrived_station_code: str
+    departure_station_code: str
+    schedule: list[tuple]
+    update_time: datetime.datetime
+    id: Optional[str]
+
+    def create_document(self) -> dict:
+        current_data = self.dict()
+        current_data.pop("id")
+        return current_data

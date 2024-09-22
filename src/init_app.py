@@ -7,6 +7,7 @@ from src.controller import ScheduleController, controller_types
 from src.services.api_client.api_client_types import StoreType
 from src.services.api_client.core import TransportApiClient, ApiInteractor
 from src.services.db_client import RegisteredStationsDbClient
+from src.services.db_client.core import ScheduleDbClient
 from src.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,8 @@ class AppDataClassesType:
     controller_class: Type[ScheduleController]
     api_client_class: Type[TransportApiClient]
     api_interactor_class: Type[ApiInteractor]
-    db_client_class: Type[RegisteredStationsDbClient]
+    stations_db_client_class: Type[RegisteredStationsDbClient]
+    schedule_db_client_class: Type[ScheduleDbClient]
 
 
 @dataclass
@@ -28,8 +30,9 @@ class AppDataType:
 AppDataClasses = AppDataClassesType(
     controller_class=ScheduleController,
     api_client_class=TransportApiClient,
-    db_client_class=RegisteredStationsDbClient,
+    stations_db_client_class=RegisteredStationsDbClient,
     api_interactor_class=ApiInteractor,
+    schedule_db_client_class=ScheduleDbClient
 )
 
 __api_client = AppDataClasses.api_client_class(
@@ -40,7 +43,7 @@ __api_client = AppDataClasses.api_client_class(
 
 __api_interactor = AppDataClasses.api_interactor_class(__api_client)
 
-__entity = AppDataClasses.db_client_class(
+__stations_entity = AppDataClasses.stations_db_client_class(
     db_name=settings.DB_NAME,
     db_user=settings.DB_USER,
     db_host=settings.DB_HOST,
@@ -48,8 +51,24 @@ __entity = AppDataClasses.db_client_class(
     dp_port=settings.DB_PORT
 )
 
-__controller = AppDataClasses.controller_class(__api_interactor, __entity)
+__schedule_entity = AppDataClasses.schedule_db_client_class(
+    db_name=settings.DB_NAME,
+    db_user=settings.DB_USER,
+    db_host=settings.DB_HOST,
+    db_password=settings.DB_PASSWORD,
+    dp_port=settings.DB_PORT
+)
+
+__controller = AppDataClasses.controller_class(__api_interactor, __stations_entity)
 
 
 def get_app_data() -> AppDataType:
     return AppDataType(controller=__controller)
+
+
+async def main():
+    await __schedule_entity.write_schedule(departure_station_code="123", arrived_station_code="21231",
+                                           schedule_data=[("ras", "ras")])
+    print(await __schedule_entity.get_schedule(departure_station_code="123", arrived_station_code="21231"))
+
+asyncio.run(main())
