@@ -66,9 +66,10 @@ def get_app_data() -> AppDataType:
     return AppDataType(controller=__controller)
 
 
-async def main():
-    await __schedule_entity.write_schedule(departure_station_code="123", arrived_station_code="21231",
-                                           schedule_data=[("ras", "ras")])
-    print(await __schedule_entity.get_schedule(departure_station_code="123", arrived_station_code="21231"))
 
-asyncio.run(main())
+# async def main():
+#     await __schedule_entity.write_schedule(departure_station_code="123", arrived_station_code="21231",
+#                                            schedule_data=[("ras", "ras")])
+#     print(await __schedule_entity.get_schedule(departure_station_code="123", arrived_station_code="21231"))
+#
+# asyncio.run(main())

@@ -1,6 +1,7 @@
 from . import controller_types, exc
 from src.services.api_client.core import ApiInteractor
 from src.services.db_client import RegisteredStationsDbClient, exc as db_exc
+from ..services.db_client.core import ScheduleDbClient
 
 
 class ServiceInterface:
@@ -28,12 +29,15 @@ class ServiceInterface:
 
 class ScheduleController:
 
-    def __init__(self, api_interactor: ApiInteractor, entity: RegisteredStationsDbClient):
-        self.service_interface = ServiceInterface(api_interactor, entity)
-        self.__entity = entity
+    def __init__(self, api_interactor: ApiInteractor, stations_entity: RegisteredStationsDbClient,
+                 schedule_entity: ScheduleDbClient):
+        self.service_interface = ServiceInterface(api_interactor, stations_entity)
+        self.__entity = stations_entity
+        self.__schedule_entity = schedule_entity
 
     async def get_registered_stations(self,
-                                      direction: controller_types.StationsDirection) -> controller_types.ListStationInTuple:
+                                      direction: controller_types.StationsDirection
+                                      ) -> controller_types.ListStationInTuple:
         """
         Список станций зарегестированных в данном направлении.
         """
@@ -41,7 +45,8 @@ class ScheduleController:
         return all_registered_stations.ext_get_in_list_tuple()
 
     async def get_available_for_registration_stations_in_direction(self,
-                                                                   direction: controller_types.StationsDirection) -> controller_types.ListStationInTuple:
+                                                                   direction: controller_types.StationsDirection
+                                                                   ) -> controller_types.ListStationInTuple:
         """
         Получение списка станций доступных для регистрации.
         """
@@ -67,3 +72,6 @@ class ScheduleController:
 
     async def move_station(self, direction: controller_types.StationsDirection, code: str) -> None:
         await self.__entity.move_station(code, direction)
+
+    # async def refresh_schedules(self, depart):
+    #     register_stations = self.service_interface.get_all_registered_stations()

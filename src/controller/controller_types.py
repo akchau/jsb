@@ -1,3 +1,4 @@
+import datetime
 from enum import Enum
 from pydantic import BaseModel
 
@@ -46,10 +47,10 @@ class StationsList(BaseModel):
             ]
         )
 
-    def int_get_stations_in_direction(self, direction) -> 'StationsList':
-        return StationsList(
-            stations=[
-                station for station in self.stations
-                if station.direction == direction
-            ]
-        )
+
+class Schedule(BaseModel):
+    arrived_station_code: str
+    departure_station_code: str
+    schedule: list[tuple]
+    update_time: datetime.datetime
+

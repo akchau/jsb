@@ -1,9 +1,7 @@
 # TODO Эту модель включить в стандартный пакет и обрабатывать. Пока не тестируем
 import datetime
 import re
-import time
 from typing import Optional
-
 from pydantic import BaseModel, validator
 
 
@@ -21,14 +19,23 @@ class DbClientAuthModel(BaseModel):
         return v
 
 
-class ScheduleModel(BaseModel):
-    arrived_station_code: str
-    departure_station_code: str
-    schedule: list[tuple]
-    update_time: datetime.datetime
+class BaseMongoModel(BaseModel):
     id: Optional[str]
 
     def create_document(self) -> dict:
         current_data = self.dict()
         current_data.pop("id")
         return current_data
+
+
+class ScheduleModel(BaseMongoModel):
+    arrived_station_code: str
+    departure_station_code: str
+    schedule: list[tuple]
+    update_time: datetime.datetime
+
+
+class StationModel(BaseMongoModel):
+    code: str
+    title: str
+    direction: str

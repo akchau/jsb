@@ -1,16 +1,14 @@
 import datetime
-import time
 from typing import TypeVar, Generic
-
-from mongo_db_client import MongoDbTransport
 from pydantic import ValidationError
 
 from src.controller.controller_types import StationsDirection
 from src.services.db_client.base import BaseDbClient
-from src.services.db_client.db_client_types import DbClientAuthModel, ScheduleModel
+from src.services.db_client.db_client_types import ScheduleModel
 from src.services.db_client.exc import ExistException, NotExistException, DbClientException, AuthError, ModelError
 
 Station = TypeVar("Station")
+DomainScheduleObject = TypeVar("DomainScheduleObject")
 
 
 class ScheduleDbClient(BaseDbClient):
@@ -33,18 +31,12 @@ class ScheduleDbClient(BaseDbClient):
                 return schedule
         return None
 
-    async def write_schedule(self, departure_station_code: str, arrived_station_code: str,
-                             schedule_data: list[tuple]) -> ScheduleModel | None:
+    async def write_schedule(self, schedule_object: DomainScheduleObject) -> ScheduleModel | None:
         """
         Зарегистрировать станцию.
         """
         try:
-            new_schedule = ScheduleModel(
-                arrived_station_code=arrived_station_code,
-                departure_station_code=departure_station_code,
-                update_time=datetime.datetime.now(),
-                schedule=schedule_data
-            )
+            new_schedule = ScheduleModel(**schedule_object)
         except ValidationError:
             raise ModelError("Ошибка при создании модели расписания.")
 
@@ -61,7 +53,7 @@ class ScheduleDbClient(BaseDbClient):
 
 
 # TODO перенести слой с подтверждением удаления  в отдельный слой, а клиент только для логики БД???
-class RegisteredStationsDbClient(Generic[Station]):
+class RegisteredStationsDbClient(BaseDbClient, Generic[Station]):
     """
     Клиент зарегистрированных станций.
 
@@ -71,22 +63,8 @@ class RegisteredStationsDbClient(Generic[Station]):
 
     STATIONS_COLLECTION_NAME = "stations"
 
-    def __init__(self, db_name: str, db_host: str, dp_port: int, db_user: str, db_password: str,
-                 _transport_class=MongoDbTransport):
-        try:
-            clean_data = DbClientAuthModel(
-                db_name=db_name,
-                db_host=db_host,
-                db_port=dp_port,
-                db_user=db_user,
-                db_password=db_password
-            )
-        except ValidationError:
-            raise AuthError("Невалидные данные для подключения к бд")
-        self.__transport = _transport_class(**clean_data.dict())
-
     async def __get_station_by_code_and_direction(self, code: str, direction: StationsDirection) -> dict | None:
-        all_stations = self.__transport.get_list(collection_name=self.STATIONS_COLLECTION_NAME)
+        all_stations = self._transport.get_list(collection_name=self.STATIONS_COLLECTION_NAME)
         result = [station for station in all_stations
                   if station["code"] == code and station["direction"] == direction]
         if len(result) == 0:
@@ -100,7 +78,7 @@ class RegisteredStationsDbClient(Generic[Station]):
         :return: Список станций, зарегистрированных в данном направлении.
         """
         # TODO тут можно проверять, что поле имеет атрибут direction
-        all_stations: list[dict] = self.__transport.get_list(collection_name=self.STATIONS_COLLECTION_NAME)
+        all_stations: list[dict] = self._transport.get_list(collection_name=self.STATIONS_COLLECTION_NAME)
         return [station for station in all_stations if station["direction"] == direction]
 
     async def register_station(self, station: dict) -> dict:
@@ -115,7 +93,7 @@ class RegisteredStationsDbClient(Generic[Station]):
 
         this_station = await self.__get_station_by_code_and_direction(station_code, station_direction)
         if this_station is None:
-            self.__transport.post(self.STATIONS_COLLECTION_NAME, station)
+            self._transport.post(self.STATIONS_COLLECTION_NAME, station)
             created_station = await self.__get_station_by_code_and_direction(station_code, station_direction)
             if created_station is None:
                 raise DbClientException("Станция не зарегистриоовалась!")
@@ -133,7 +111,7 @@ class RegisteredStationsDbClient(Generic[Station]):
 
         station = await self.__get_station_by_code_and_direction(code, direction)
         if station:
-            self.__transport.delete(collection_name=self.STATIONS_COLLECTION_NAME,
+            self._transport.delete(collection_name=self.STATIONS_COLLECTION_NAME,
                                     instance_id=station["_id"])
             deleted_station = await self.__get_station_by_code_and_direction(code, direction)
             if deleted_station:
@@ -155,12 +133,12 @@ class RegisteredStationsDbClient(Generic[Station]):
             new_value = (StationsDirection.TO_MOSCOW if station["direction"] == StationsDirection.FROM_MOSCOW \
                          else StationsDirection.FROM_MOSCOW)
 
-            self.__transport.update_field(
+            self._transport.update_field(
                 collection_name=self.STATIONS_COLLECTION_NAME,
                 field_name="direction",
                 new_value=new_value,
                 instance_id=station["_id"])
-            updated_station = self.__transport.get(
+            updated_station = self._transport.get(
                     collection_name=self.STATIONS_COLLECTION_NAME,
                     instance_id=station["_id"]
             )
