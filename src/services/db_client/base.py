@@ -6,7 +6,7 @@ from src.services.db_client.exc import AuthError
 
 
 #TODO то надо включать в стандартный пакет
-class BaseDbClient:
+class BaseDbCollection:
 
     def __init__(self, db_name: str, db_host: str, dp_port: int, db_user: str, db_password: str,
                  _transport_class=MongoDbTransport):

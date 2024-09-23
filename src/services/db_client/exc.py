@@ -2,6 +2,10 @@ class DbClientException(Exception):
     pass
 
 
+class TransportError(Exception):
+    pass
+
+
 class ModelError(Exception):
     pass
 

@@ -4,3 +4,7 @@ class ControllerException(Exception):
 
 class NotAvailable(ControllerException):
     pass
+
+
+class InternalError(ControllerException):
+    pass

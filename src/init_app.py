@@ -1,13 +1,15 @@
 import asyncio
+import datetime
 import logging
 from dataclasses import dataclass
 from typing import Type
 
 from src.controller import ScheduleController, controller_types
+from src.controller.controller_types import Schedule
 from src.services.api_client.api_client_types import StoreType
 from src.services.api_client.core import TransportApiClient, ApiInteractor
 from src.services.db_client import RegisteredStationsDbClient
-from src.services.db_client.core import ScheduleDbClient
+from src.services.db_client.core import ScheduleDbCollection
 from src.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -19,7 +21,7 @@ class AppDataClassesType:
     api_client_class: Type[TransportApiClient]
     api_interactor_class: Type[ApiInteractor]
     stations_db_client_class: Type[RegisteredStationsDbClient]
-    schedule_db_client_class: Type[ScheduleDbClient]
+    schedule_db_client_class: Type[ScheduleDbCollection]
 
 
 @dataclass
@@ -32,7 +34,7 @@ AppDataClasses = AppDataClassesType(
     api_client_class=TransportApiClient,
     stations_db_client_class=RegisteredStationsDbClient,
     api_interactor_class=ApiInteractor,
-    schedule_db_client_class=ScheduleDbClient
+    schedule_db_client_class=ScheduleDbCollection
 )
 
 __api_client = AppDataClasses.api_client_class(
@@ -59,17 +61,18 @@ __schedule_entity = AppDataClasses.schedule_db_client_class(
     dp_port=settings.DB_PORT
 )
 
-__controller = AppDataClasses.controller_class(__api_interactor, __stations_entity)
+__controller = AppDataClasses.controller_class(__api_interactor, __stations_entity, __schedule_entity)
 
 
 def get_app_data() -> AppDataType:
     return AppDataType(controller=__controller)
 
 
+async def main():
+    await __schedule_entity.write_schedule(schedule_object=Schedule(arrived_station_code="123",
+                                                                    departure_station_code="124",
+                                                                    update_time=datetime.datetime.now(),
+                                                                    schedule=[("station_1", "djeklfw",)]))
+    print(await __schedule_entity.get_schedule(departure_station_code="124", arrived_station_code="123"))
 
-# async def main():
-#     await __schedule_entity.write_schedule(departure_station_code="123", arrived_station_code="21231",
-#                                            schedule_data=[("ras", "ras")])
-#     print(await __schedule_entity.get_schedule(departure_station_code="123", arrived_station_code="21231"))
-#
-# asyncio.run(main())
+asyncio.run(main())

@@ -20,32 +20,11 @@ class Station(BaseModel):
     title: str
     direction: StationsDirection
 
-    @staticmethod
-    def create_with_direction(data, direction: StationsDirection):
-        return Station(**data, direction=direction)
-
     def to_tuple(self) -> StationInTuple:
         return self.title, self.code
 
-
-class StationsList(BaseModel):
-    stations: list[Station]
-
-    def ext_get_in_list_tuple(self) -> ListStationInTuple:
-        return [station.to_tuple() for station in self.stations]
-
-    def int_get_station_by_code(self, code) -> Station | None:
-        for station in self.stations:
-            if station.code == code:
-                return station
-
-    def int_get_not_in(self, station_list: 'StationsList') -> 'StationsList':
-        return StationsList(
-            stations=[
-                station for station in self.stations
-                if station not in station_list.stations
-            ]
-        )
+    def __eq__(self, other: 'Station') -> bool:
+        return self.code == other.code and self.direction == other.direction
 
 
 class Schedule(BaseModel):

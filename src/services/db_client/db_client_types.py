@@ -28,14 +28,14 @@ class BaseMongoModel(BaseModel):
         return current_data
 
 
-class ScheduleModel(BaseMongoModel):
+class ScheduleDocumentModel(BaseMongoModel):
     arrived_station_code: str
     departure_station_code: str
     schedule: list[tuple]
     update_time: datetime.datetime
 
 
-class StationModel(BaseMongoModel):
+class StationDocumentModel(BaseMongoModel):
     code: str
     title: str
     direction: str
