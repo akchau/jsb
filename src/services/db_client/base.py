@@ -1,5 +1,7 @@
+from typing import Type
+
 from mongo_db_client import MongoDbTransport
-from pydantic import ValidationError
+from pydantic import ValidationError, BaseModel
 
 from src.services.db_client.db_client_types import DbClientAuthModel
 from src.services.db_client.exc import AuthError
@@ -9,7 +11,7 @@ from src.services.db_client.exc import AuthError
 class BaseDbCollection:
 
     def __init__(self, db_name: str, db_host: str, dp_port: int, db_user: str, db_password: str,
-                 _transport_class=MongoDbTransport):
+                 collection_model: Type[BaseModel], _transport_class=MongoDbTransport):
         try:
             clean_data = DbClientAuthModel(
                 db_name=db_name,
@@ -21,3 +23,4 @@ class BaseDbCollection:
         except ValidationError:
             raise AuthError("Невалидные данные для подключения к бд")
         self._transport = _transport_class(**clean_data.dict())
+        self._collection_model = collection_model

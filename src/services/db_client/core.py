@@ -32,7 +32,7 @@ class ScheduleDbCollection(BaseDbCollection):
                 return schedule
         return None
 
-    async def write_schedule(self, schedule_object: DomainScheduleObject | dict) -> ScheduleDocumentModel:
+    async def write_schedule(self, new_object: DomainScheduleObject | dict) -> ScheduleDocumentModel:
         """
         Зарегистрировать станцию.
         """
@@ -48,33 +48,31 @@ class ScheduleDbCollection(BaseDbCollection):
         # 8-12. Транспорт ошибка в каждом вызове трпнспорта
         # 13. После успешного создания не существует.
 
-
-
         try:
             try:
-                if isinstance(schedule_object, BaseModel):
-                    new_schedule = ScheduleDocumentModel(**schedule_object.dict())
-                elif isinstance(schedule_object, dict):
-                    new_schedule = ScheduleDocumentModel(**schedule_object)
+                if isinstance(new_object, BaseModel):
+                    new_model = self._collection_model(**new_object.dict())
+                elif isinstance(new_object, dict):
+                    new_model = ScheduleDocumentModel(**new_object)
                 else:
                     raise ModelError("Неизвестный тип для парсинга в модель.")
             except ValidationError as e:
                 raise ModelError(f"Ошибка при создании модели расписания. {str(e)}")
 
             # Если такое уже существует просто обновим.
-            this_schedule = await self.get_schedule(new_schedule.departure_station_code,
-                                                    new_schedule.arrived_station_code)
-            if this_schedule:
-                self._transport.delete(collection_name=self.COLLECTION_NAME, instance_id=this_schedule.id)
+            this_object = await self.get_schedule(new_model.departure_station_code,
+                                                  new_model.arrived_station_code)
+            if this_object:
+                self._transport.delete(collection_name=self.COLLECTION_NAME, instance_id=this_object.id)
 
-            self._transport.post(self.COLLECTION_NAME, new_schedule.create_document())
+            self._transport.post(self.COLLECTION_NAME, new_model.create_document())
 
             # Проверяем что создалось
-            created_schedule = await self.get_schedule(new_schedule.departure_station_code,
-                                                       new_schedule.arrived_station_code)
-            if created_schedule is None:
+            created_object = await self.get_schedule(new_model.departure_station_code,
+                                                     new_model.arrived_station_code)
+            if created_object is None:
                 raise DbClientException("Расписание не добавлено!")
-            return created_schedule
+            return created_object
         except BaseMongoTransportException as e:
             raise TransportError(str(e))
 
@@ -125,7 +123,7 @@ class RegisteredStationsDbClient(BaseDbCollection, Generic[DomainStationObject])
         """
 
         try:
-            new_station = StationDocumentModel(**station.dict())
+            new_station = self._collection_model(**station.dict())
         except ValidationError:
             raise ModelError("Ошибка при создании модели станци.")
 
