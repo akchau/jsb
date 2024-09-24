@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Type
 
 from src.controller import ScheduleController, controller_types
-from src.controller.controller_types import Schedule
+from src.controller.controller_types import Schedule, Station, StationsDirection
 from src.services.api_client.api_client_types import StoreType
 from src.services.api_client.core import TransportApiClient, ApiInteractor
 from src.services.db_client import RegisteredStationsDbClient
@@ -52,16 +52,19 @@ __stations_entity = AppDataClasses.stations_db_client_class(
     db_host=settings.DB_HOST,
     db_password=settings.DB_PASSWORD,
     dp_port=settings.DB_PORT,
-    collection_model=StationDocumentModel
+    collection_model=StationDocumentModel,
+    collection_name="stations"
 )
 
+# TODO пора пробросить транспорт в общий класс
 __schedule_entity = AppDataClasses.schedule_db_client_class(
     db_name=settings.DB_NAME,
     db_user=settings.DB_USER,
     db_host=settings.DB_HOST,
     db_password=settings.DB_PASSWORD,
     dp_port=settings.DB_PORT,
-    collection_model=ScheduleDocumentModel
+    collection_model=ScheduleDocumentModel,
+    collection_name="schedule"
 )
 
 __controller = AppDataClasses.controller_class(__api_interactor, __stations_entity, __schedule_entity)
@@ -76,6 +79,20 @@ async def main():
                                                                departure_station_code="124",
                                                                update_time=datetime.datetime.now(),
                                                                schedule=[("station_1", "djeklfw",)]))
+    await __schedule_entity.write_schedule(new_object=Schedule(arrived_station_code="124",
+                                                               departure_station_code="123",
+                                                               update_time=datetime.datetime.now(),
+                                                               schedule=[("station_2", "djeklfw",)]))
+    await __schedule_entity.delete_schedule(arrived_station_code="124",
+                                            departure_station_code="123")
     print(await __schedule_entity.get_schedule(departure_station_code="124", arrived_station_code="123"))
+
+    await __stations_entity.register_station(station=Station(direction=StationsDirection.FROM_MOSCOW, code="123",
+                                                             title="ЖЕЛДОР"))
+    print(await __stations_entity.get_all_registered_stations())
+
+    print(await __stations_entity.get_all_registered_stations(direction=StationsDirection.TO_MOSCOW))
+    await __stations_entity.move_station(code="123", direction=StationsDirection.FROM_MOSCOW)
+    await __stations_entity.delete_station(code="123", direction=StationsDirection.TO_MOSCOW)
 
 asyncio.run(main())

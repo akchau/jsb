@@ -1,4 +1,6 @@
-# class ScheduleEntity:
-#
-#     def __init__(self):
-#         self.collections =
+class ScheduleEntity:
+
+    def __init__(self):
+        self.collections = {
+
+        }

@@ -14,8 +14,6 @@ DomainScheduleObject = TypeVar("DomainScheduleObject")
 
 class ScheduleDbCollection(BaseDbCollection):
 
-    COLLECTION_NAME = "schedule"
-
     async def get_schedule(self, departure_station_code: str, arrived_station_code) -> ScheduleDocumentModel | None:
         """
         Получение расписания по кодам станций.
@@ -24,13 +22,31 @@ class ScheduleDbCollection(BaseDbCollection):
         :param arrived_station_code: Код станции прибытия.
         :return:
         """
-        schedules = [ScheduleDocumentModel(**schedule, id=str(schedule["_id"]))
-                     for schedule in self._transport.get_list(self.COLLECTION_NAME)]
+        schedules = self._transport.get_list(self._collection_name, model=ScheduleDocumentModel)
         for schedule in schedules:
             if (schedule.departure_station_code == departure_station_code and
                     schedule.arrived_station_code == arrived_station_code):
                 return schedule
         return None
+
+    async def delete_schedule(self, departure_station_code: str, arrived_station_code) -> ScheduleDocumentModel:
+        """
+        Удалить станцию.
+        :param code: Код станци.
+        :param direction: Направление, удаляемой станции.
+        :return: Данные станции.
+        """
+
+        schedule = await self.get_schedule(departure_station_code, arrived_station_code)
+        if schedule:
+            self._transport.delete(collection_name=self._collection_name,
+                                   instance_id=schedule.id)
+            deleted_schedule = await self.get_schedule(departure_station_code, arrived_station_code)
+            if deleted_schedule:
+                raise DbClientException("Станция не удалилась")
+            return schedule
+        else:
+            raise NotExistException
 
     async def write_schedule(self, new_object: DomainScheduleObject | dict) -> ScheduleDocumentModel:
         """
@@ -63,9 +79,9 @@ class ScheduleDbCollection(BaseDbCollection):
             this_object = await self.get_schedule(new_model.departure_station_code,
                                                   new_model.arrived_station_code)
             if this_object:
-                self._transport.delete(collection_name=self.COLLECTION_NAME, instance_id=this_object.id)
+                self._transport.delete(collection_name=self._collection_name, instance_id=this_object.id)
 
-            self._transport.post(self.COLLECTION_NAME, new_model.create_document())
+            self._transport.post(self._collection_name, new_model.create_document())
 
             # Проверяем что создалось
             created_object = await self.get_schedule(new_model.departure_station_code,
@@ -86,8 +102,6 @@ class RegisteredStationsDbClient(BaseDbCollection, Generic[DomainStationObject])
     - Регистрация новой станции.
     """
 
-    STATIONS_COLLECTION_NAME = "stations"
-
     async def __get_station(self, code: str, direction: StationsDirection) -> StationDocumentModel | None:
         all_stations_in_direction = await self.get_all_registered_stations(direction)
         result = [station for station in all_stations_in_direction
@@ -103,10 +117,8 @@ class RegisteredStationsDbClient(BaseDbCollection, Generic[DomainStationObject])
         :return: Список станций, зарегистрированных в данном направлении.
         """
         try:
-            all_stations: list[StationDocumentModel] = [
-                StationDocumentModel(**station, id=str(station["_id"]))
-                for station in self._transport.get_list(collection_name=self.STATIONS_COLLECTION_NAME)
-            ]
+            all_stations: list[StationDocumentModel] = self._transport.get_list(collection_name=self._collection_name,
+                                                                                model=StationDocumentModel)
         except ValidationError:
             raise ModelError("Ошибка при получении списка зарегистрированных станций")
 
@@ -129,7 +141,7 @@ class RegisteredStationsDbClient(BaseDbCollection, Generic[DomainStationObject])
 
         this_station: StationDocumentModel | None = await self.__get_station(new_station.code, new_station.direction)
         if this_station is None:
-            self._transport.post(self.STATIONS_COLLECTION_NAME, new_station.create_document())
+            self._transport.post(self._collection_name, new_station.create_document())
             created_station = await self.__get_station(new_station.code, new_station.direction)
             if created_station is None:
                 raise DbClientException("Станция не зарегистриоовалась!")
@@ -147,7 +159,7 @@ class RegisteredStationsDbClient(BaseDbCollection, Generic[DomainStationObject])
 
         station = await self.__get_station(code, direction)
         if station:
-            self._transport.delete(collection_name=self.STATIONS_COLLECTION_NAME,
+            self._transport.delete(collection_name=self._collection_name,
                                    instance_id=station.id)
             deleted_station = await self.__get_station(code, direction)
             if deleted_station:
@@ -170,10 +182,10 @@ class RegisteredStationsDbClient(BaseDbCollection, Generic[DomainStationObject])
                          else StationsDirection.FROM_MOSCOW)
 
             # TODO Надо оттестить этот момент
-            this_station = self.__get_station(code, new_value)
+            this_station = await self.__get_station(code, new_value)
             if this_station is None:
                 self._transport.update_field(
-                    collection_name=self.STATIONS_COLLECTION_NAME,
+                    collection_name=self._collection_name,
                     field_name="direction",
                     new_value=new_value,
                     instance_id=station.id)
