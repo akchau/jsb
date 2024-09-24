@@ -1,1 +1,1 @@
-from .core import RegisteredStationsDbClient
+from .collections import RegisteredStationsDbClient

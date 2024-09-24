@@ -1,20 +1,17 @@
 from pydantic import ValidationError
 
-from . import controller_types, exc
+from . import controller_types
 from src.services.api_client.core import ApiInteractor
-from src.services.db_client import RegisteredStationsDbClient, exc as db_exc
 from .controller_types import Station
 from .exc import InternalError
-from ..services.db_client.core import ScheduleDbCollection
+from ..services.db_client.core import ScheduleEntity
 
 
 class ScheduleController:
 
-    def __init__(self, api_interactor: ApiInteractor, stations_entity: RegisteredStationsDbClient,
-                 schedule_entity: ScheduleDbCollection):
+    def __init__(self, api_interactor: ApiInteractor, entity: ScheduleEntity):
         self.__api = api_interactor
-        self.__entity = stations_entity
-        self.__schedule_entity = schedule_entity
+        self.__entity = entity
 
     async def __get_all_available_stations(self, direction) -> list[Station]:
         list_stops_from_api: list[dict] = await self.__api.get_all_stations_for_base_stations_thread()
@@ -27,7 +24,7 @@ class ScheduleController:
         try:
             return [
                 Station(**station.dict())
-                for station in await self.__entity.get_all_registered_stations(direction=direction)
+                for station in await self.__entity.get_all_registered_stations()
             ]
         except ValidationError:
             raise InternalError("Данные получены в неверном формате")

@@ -1,27 +1,15 @@
-from typing import Type
+from typing import Type, TypeVar, Generic
 
-from mongo_db_client import MongoDbTransport
-from pydantic import ValidationError, BaseModel
+from pydantic import BaseModel
 
-from src.services.db_client.db_client_types import DbClientAuthModel
-from src.services.db_client.exc import AuthError
+
+CollectionModel = TypeVar("CollectionModel")
 
 
 #TODO то надо включать в стандартный пакет
-class BaseDbCollection:
+class BaseDbCollection(Generic[CollectionModel]):
 
-    def __init__(self, db_name: str, db_host: str, dp_port: int, db_user: str, db_password: str,
-                 collection_model: Type[BaseModel], collection_name: str, _transport_class=MongoDbTransport):
-        try:
-            clean_data = DbClientAuthModel(
-                db_name=db_name,
-                db_host=db_host,
-                db_port=dp_port,
-                db_user=db_user,
-                db_password=db_password
-            )
-        except ValidationError:
-            raise AuthError("Невалидные данные для подключения к бд")
-        self._transport = _transport_class(**clean_data.dict())
+    def __init__(self, transport, collection_model: Type[CollectionModel], collection_name: str):
         self._collection_model = collection_model
         self._collection_name = collection_name
+        self._transport = transport

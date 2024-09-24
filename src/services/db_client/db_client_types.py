@@ -5,6 +5,7 @@ from typing import Optional
 from pydantic import BaseModel, validator
 
 
+# TODO Это походу тоже в базовый клиент
 class DbClientAuthModel(BaseModel):
     db_name: str
     db_user: str
