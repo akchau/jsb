@@ -1,3 +1,6 @@
+"""
+Настройки приложения.
+"""
 import os
 from pathlib import Path
 
@@ -7,6 +10,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 class Settings(BaseSettings):
+    """
+    Настройки приложения.
+    """
     DEBUG: bool
     DB_NAME: str
     DB_USER: str
@@ -18,7 +24,11 @@ class Settings(BaseSettings):
     API_KEY: str
     BASE_STATION_CODE: str
 
+    # pylint: disable=R0903
     class Config:
+        """
+        Конфигурация.
+        """
         env_file = os.path.join(BASE_DIR, '.env')
 
 

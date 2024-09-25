@@ -1,23 +1,30 @@
-from telegram import Update
-from telegram.ext import ContextTypes
+class DataConstructor:
+    """
+    Конструктор сообщения с расписанием.
+    """
 
-from core.send_schedule import BaseDataConstructor
-from src import settings
-from shedule_manager.schedule_getter import get_current_shedule
+    def __init__(self, pagination):
+        self.__pagination = pagination
 
-
-class DataConstructor(BaseDataConstructor):
-
-    def _request_schedule(self, departure_station_code, arrived_station_code):
-        return get_current_shedule(departure_station_code, arrived_station_code)
-    
-    def _clean_fulling(self, value: str):
+    @staticmethod
+    def _clean_fulling(value: str) -> str:
+        """
+        Алгоритм проверки загруженности.
+        :param value:
+        :return:
+        """
         if "Железнодорожная" in value:
             return "🍃"
         else:
             return "♨️"
 
-    def _clean_train_type(self, value: str):
+    @staticmethod
+    def _clean_train_type(value: str) -> str:
+        """
+        Отрисовка смайлика для типа поезда.
+        :param value: Строка с описанием типа поезда.
+        :return:
+        """
         clean_value = value
         if value == "Стандарт плюс":
             clean_value = "🚈"
@@ -50,7 +57,7 @@ class DataConstructor(BaseDataConstructor):
         counter = 0
         result_list = []
         for _, value in data.items():
-            if counter < settings.PAGINATION:
+            if counter < self.__pagination:
                 counter += 1
                 schedule_message += self._construct_string(value)
             else:
@@ -60,12 +67,6 @@ class DataConstructor(BaseDataConstructor):
         result_list.append(schedule_message)
         return result_list
 
-async def load_and_sent_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE, buttons, departure_station_code, arrived_station_code):
-    schedule = DataConstructor({}).get_shedule(departure_station_code, arrived_station_code)
-    for shedule_object in schedule:
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=shedule_object,
-            reply_markup=buttons,
-            parse_mode="html"
-        )
+
+if __name__ == "__main__":
+    constructor = DataConstructor(10)

@@ -1,3 +1,6 @@
+"""
+Меню при регистрации станции.
+"""
 from telegram import InlineKeyboardButton, Update, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
@@ -6,7 +9,13 @@ from src.controller.controller_types import StationsDirection
 from src.init_app import get_app_data
 
 
-async def registered_stations(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def registered_stations(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
+    """
+    Обработчик меню регистрации станции.
+    :param update:
+    :param _:
+    :return:
+    """
     buttons = [
         [
             InlineKeyboardButton(text="Из Москвы", callback_data=str(constants.REGISTERED_STATIONS_FROM_MOSCOW)),
@@ -20,7 +29,7 @@ async def registered_stations(update: Update, context: ContextTypes.DEFAULT_TYPE
     return constants.REGISTERED_STATIONS
 
 
-async def registered_stations_from_moscow(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def registered_stations_from_moscow(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
     buttons = [
         [InlineKeyboardButton(text="Назад", callback_data=str(constants.REGISTERED_STATIONS))],
         [InlineKeyboardButton(text="Админка", callback_data=str(constants.ADMIN))]

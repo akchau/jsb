@@ -1,10 +1,13 @@
+"""
+Обработчик главного меню.
+"""
 from telegram import InlineKeyboardButton, Update, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from src.bot import constants
 
 
-async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def main_menu(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
     """
     Главное меню - точка входа.
     """

@@ -1,3 +1,6 @@
+"""
+Основной модуль бота.
+"""
 import logging
 from telegram.ext import Application
 

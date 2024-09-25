@@ -1,3 +1,6 @@
+"""
+Главный модуль инициализации приложения.
+"""
 import asyncio
 import datetime
 import logging
@@ -17,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class AppDataClassesType:
+    """
+    Класс для сбрки классов приложения.
+    """
     controller_class: Type[ScheduleController]
     api_client_class: Type[TransportApiClient]
     api_interactor_class: Type[ApiInteractor]
@@ -25,6 +31,9 @@ class AppDataClassesType:
 
 @dataclass
 class AppDataType:
+    """
+    Класс с объектами классов приложения.
+    """
     controller: ScheduleController
 
 
@@ -56,18 +65,30 @@ __controller = AppDataClasses.controller_class(__api_interactor, __entity)
 
 
 def get_app_data() -> AppDataType:
+    """
+    Функция вернет все объекты приложения.
+    :return: Объекты приложения.
+    """
     return AppDataType(controller=__controller)
 
 
 async def main():
+    """
+    Мануальное тестирование.
+    :return:
+    """
     await __entity.collections.schedule.write_schedule(new_schedule=ScheduleDocumentModel(arrived_station_code="123",
                                                        departure_station_code="124",
                                                        update_time=datetime.datetime.now(),
                                                        schedule=[("station_1", "djeklfw")]))
-    schedule = await __entity.collections.schedule.write_schedule(new_schedule=ScheduleDocumentModel(arrived_station_code="124",
-                                                                  departure_station_code="123",
-                                                                  update_time=datetime.datetime.now(),
-                                                                  schedule=[("station_2", "djeklfw")]))
+    schedule = await __entity.collections.schedule.write_schedule(
+        new_schedule=ScheduleDocumentModel(
+            arrived_station_code="124",
+            departure_station_code="123",
+            update_time=datetime.datetime.now(),
+            schedule=[("station_2", "djeklfw")]
+        )
+    )
     await __entity.collections.schedule.delete_schedule(schedule)
     print(await __entity.collections.schedule.get_schedule(departure_station_code="124", arrived_station_code="123"))
     # ------------------------------------------------------------------------------------------------------------------
