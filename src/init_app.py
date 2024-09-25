@@ -5,10 +5,11 @@ from dataclasses import dataclass
 from typing import Type
 
 from src.controller import ScheduleController
-from src.controller.controller_types import Schedule, Station, StationsDirection
+from src.controller.controller_types import Station, StationsDirection
 from src.services.api_client.api_client_types import StoreType
 from src.services.api_client.core import TransportApiClient, ApiInteractor
 from src.services.db_client.core import ScheduleEntity
+from src.services.db_client.db_client_types import ScheduleDocumentModel, StationDocumentModel
 from src.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -59,22 +60,25 @@ def get_app_data() -> AppDataType:
 
 
 async def main():
-    await __entity.collections.schedule.write_schedule(new_schedule=Schedule(arrived_station_code="123",
+    await __entity.collections.schedule.write_schedule(new_schedule=ScheduleDocumentModel(arrived_station_code="123",
                                                        departure_station_code="124",
                                                        update_time=datetime.datetime.now(),
                                                        schedule=[("station_1", "djeklfw",)]))
-    schedule = await __entity.collections.schedule.write_schedule(new_object=Schedule(arrived_station_code="124",
+    schedule = await __entity.collections.schedule.write_schedule(new_schedule=ScheduleDocumentModel(arrived_station_code="124",
                                                                   departure_station_code="123",
                                                                   update_time=datetime.datetime.now(),
                                                                   schedule=[("station_2", "djeklfw",)]))
     await __entity.collections.schedule.delete_schedule(schedule)
     print(await __entity.collections.schedule.get_schedule(departure_station_code="124", arrived_station_code="123"))
 
-    await __entity.collections.stations.register_station(station=Station(direction=StationsDirection.FROM_MOSCOW,
-                                                                         code="123",
-                                                         title="ЖЕЛДОР"))
+    await __entity.collections.stations.register_station(
+        new_station=StationDocumentModel(
+            direction=StationsDirection.FROM_MOSCOW,
+            code="123",
+            title="ЖЕЛДОР"
+        )
+    )
     print(await __entity.collections.stations.get_all_registered_stations())
-
     print(await __entity.collections.stations.get_all_registered_stations(direction=StationsDirection.TO_MOSCOW))
     await __entity.collections.stations.move_station(code="123", direction=StationsDirection.FROM_MOSCOW)
     await __entity.collections.stations.delete_station(code="123", direction=StationsDirection.TO_MOSCOW)

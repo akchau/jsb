@@ -2,9 +2,10 @@ from pydantic import ValidationError
 
 from . import controller_types
 from src.services.api_client.core import ApiInteractor
-from .controller_types import Station
+from .controller_types import Station, StationsDirection
 from .exc import InternalError
 from ..services.db_client.core import ScheduleEntity
+from ..services.db_client.exc import ExistException
 
 
 class ScheduleController:
@@ -12,22 +13,24 @@ class ScheduleController:
     def __init__(self, api_interactor: ApiInteractor, entity: ScheduleEntity):
         self.__api = api_interactor
         self.__entity = entity
+        self.__entity.set_on_station_change(self.on_change_station_callback)
 
     async def __get_all_available_stations(self, direction) -> list[Station]:
         list_stops_from_api: list[dict] = await self.__api.get_all_stations_for_base_stations_thread()
         return [controller_types.Station(**stop, direction=direction) for stop in list_stops_from_api]
 
+    async def on_change_station_callback(self):
+        all_stations = await self.__entity.get_all_registered_stations()
+        registered_stations_from_moscow = [station for station in all_stations
+                                           if station.direction == StationsDirection.FROM_MOSCOW]
+        registered_stations_to_moscow = [station for station in all_stations
+                                           if station.direction == StationsDirection.TO_MOSCOW]
+
     async def get_registered_stations(self, direction: controller_types.StationsDirection) -> list[Station]:
         """
         Список станций зарегестированных в данном направлении.
         """
-        try:
-            return [
-                Station(**station.dict())
-                for station in await self.__entity.get_all_registered_stations()
-            ]
-        except ValidationError:
-            raise InternalError("Данные получены в неверном формате")
+        return await self.__entity.get_all_registered_stations(direction)
 
     async def get_available_for_registration_stations_in_direction(self,
                                                                    direction: controller_types.StationsDirection
@@ -48,7 +51,7 @@ class ScheduleController:
             for available_station in all_stations:
                 if available_station.code == code:
                     await self.__entity.register_station(available_station)
-        except db_exc.ExistException:
+        except ExistException:
             pass
 
     async def delete_station(self, direction: controller_types.StationsDirection, code: str) -> None:

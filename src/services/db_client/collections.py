@@ -3,6 +3,7 @@ from pydantic import ValidationError
 
 from src.controller.controller_types import StationsDirection
 from src.services.db_client.base import BaseDbCollection, CollectionModel
+from src.services.db_client.db_client_types import StationDocumentModel
 from src.services.db_client.exc import ExistException, NotExistException, DbClientException, ModelError, TransportError
 
 
@@ -11,7 +12,7 @@ class ScheduleDbCollection(BaseDbCollection):
     def get_all_schedules(self) -> list[CollectionModel]:
         return self._transport.get_list(self._collection_name, model=self._collection_model)
 
-    async def get_schedule(self, departure_station_code: str, arrived_station_code) -> CollectionModel | None:
+    async def get_schedule(self, departure_station_code: str, arrived_station_code: str) -> CollectionModel | None:
         """
         Получение расписания по кодам станций.
 
@@ -46,7 +47,7 @@ class ScheduleDbCollection(BaseDbCollection):
         except BaseMongoTransportException as e:
             raise TransportError(str(e))
 
-    async def write_schedule(self, new_schedule: CollectionModel | dict) -> CollectionModel:
+    async def write_schedule(self, new_schedule: CollectionModel) -> CollectionModel:
         """
         Зарегистрировать станцию.
         """
@@ -98,7 +99,7 @@ class RegisteredStationsDbClient(BaseDbCollection):
             return None
         return result[0]
 
-    async def get_all_registered_stations(self, direction: CollectionModel = None) -> list[CollectionModel]:
+    async def get_all_registered_stations(self, direction: StationsDirection = None) -> list[CollectionModel]:
         """
         Получить все зарегестрированные станции.
         :param direction: Направление, в котором ищутся зарегестрированные станции.
@@ -106,7 +107,7 @@ class RegisteredStationsDbClient(BaseDbCollection):
         """
         try:
             all_stations: list[CollectionModel] = self._transport.get_list(collection_name=self._collection_name,
-                                                                           model=CollectionModel)
+                                                                           model=StationDocumentModel)
         except BaseMongoTransportException as e:
             raise TransportError(str(e))
 

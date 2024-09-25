@@ -22,7 +22,7 @@ DomainScheduleObject = TypeVar("DomainScheduleObject")
 class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
 
     def __init__(self, db_name: str, db_host: str, dp_port: int, db_user: str, db_password: str,
-                 station_domain_model: Type[DomainStationObject], on_stations_change: Callable,
+                 station_domain_model: Type[DomainStationObject],
                  _transport_class: Type[MongoDbTransport] = MongoDbTransport):
         try:
             clean_data = DbClientAuthModel(
@@ -34,15 +34,26 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
             )
         except ValidationError:
             raise AuthError("Невалидные данные для подключения к бд")
+
         transport = _transport_class(**clean_data.dict())
+
         self.collections = Collections(
-            schedule=ScheduleDbCollection(transport, collection_model=ScheduleDocumentModel,
-                                          collection_name="schedule"),
-            stations=RegisteredStationsDbClient(transport, collection_model=StationDocumentModel,
-                                                collection_name="stations")
+            schedule=ScheduleDbCollection(
+                transport,
+                collection_model=ScheduleDocumentModel,
+                collection_name="schedule"
+            ),
+            stations=RegisteredStationsDbClient(
+                transport,
+                collection_model=StationDocumentModel,
+                collection_name="stations"
+            )
         )
         self._station_domain_model = station_domain_model
-        self._on_station_change = on_stations_change
+        self.__on_station_change = None
+
+    def set_on_station_change(self, callback: Callable):
+        self.__on_station_change = callback
 
     async def __delete_related_schedule(self, station: StationDocumentModel):
         schedules = [schedule for schedule in self.collections.schedule.get_all_schedules()
@@ -52,12 +63,12 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
     async def delete_station(self, code, direction) -> None:
         station: StationDocumentModel = await self.collections.stations.delete_station(code, direction)
         await self.__delete_related_schedule(station)
-        await self._on_station_change()
+        await self.__on_station_change()
 
     async def move_station(self, code, direction) -> None:
         station: StationDocumentModel = await self.collections.stations.move_station(code, direction)
         await self.__delete_related_schedule(station)
-        await self._on_station_change()
+        await self.__on_station_change()
 
     async def register_station(self, station: DomainStationObject) -> None:
         try:
@@ -65,13 +76,13 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         except ValidationError:
             raise ModelError("Ошибка при создании модели станци.")
         await self.collections.stations.register_station(new_station)
-        await self._on_station_change()
+        await self.__on_station_change()
 
-    async def get_all_registered_stations(self) -> list[DomainStationObject]:
+    async def get_all_registered_stations(self, direction=None) -> list[DomainStationObject]:
         try:
             return [
                 self._station_domain_model(**station.dict())
-                for station in await self.collections.stations.get_all_registered_stations()
+                for station in await self.collections.stations.get_all_registered_stations(direction)
             ]
         except ValidationError:
             raise ModelError("Данные получены в неверном формате")
