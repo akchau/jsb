@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass
 from typing import Type, TypeVar, Generic, Callable
 
@@ -57,8 +58,9 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
 
     async def __delete_related_schedule(self, station: StationDocumentModel):
         schedules = [schedule for schedule in self.collections.schedule.get_all_schedules()
-                     if schedule.arrived_station_code == station.code or schedule.departure_station_code == station.code]
-        [self.collections.schedule.delete_schedule(schedule) for schedule in schedules]
+                     if schedule.arrived_station_code == station.code or
+                     schedule.departure_station_code == station.code]
+        await asyncio.gather(*[self.collections.schedule.delete_schedule(schedule) for schedule in schedules])
 
     async def delete_station(self, code, direction) -> None:
         station: StationDocumentModel = await self.collections.stations.delete_station(code, direction)
