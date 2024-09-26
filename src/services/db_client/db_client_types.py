@@ -21,6 +21,9 @@ class DbClientAuthModel(BaseModel):
 
 
 class BaseMongoModel(BaseModel):
+    """
+    Базовая модель для коллекций с документами с одинаковыми полями.
+    """
     id: Optional[str]
 
     def create_document(self) -> dict:
@@ -30,6 +33,9 @@ class BaseMongoModel(BaseModel):
 
 
 class ScheduleDocumentModel(BaseMongoModel):
+    """
+    Модель документа расписания.
+    """
     arrived_station_code: str
     departure_station_code: str
     schedule: list[tuple]
@@ -37,6 +43,9 @@ class ScheduleDocumentModel(BaseMongoModel):
 
 
 class StationDocumentModel(BaseMongoModel):
+    """
+    Модель документа станции.
+    """
     code: str
     title: str
     direction: str

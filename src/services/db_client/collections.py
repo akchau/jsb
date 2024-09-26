@@ -4,7 +4,8 @@ from pydantic import ValidationError
 from src.controller.controller_types import StationsDirection
 from src.services.db_client.base import BaseDbCollection, CollectionModel
 from src.services.db_client.db_client_types import StationDocumentModel
-from src.services.db_client.exc import ExistException, NotExistException, DbClientException, ModelError, TransportError
+from src.services.db_client.exc import ExistException, NotExistException, DbClientException, ModelError, TransportError, \
+    InternalDbError
 
 
 class ScheduleDbCollection(BaseDbCollection):
@@ -42,7 +43,7 @@ class ScheduleDbCollection(BaseDbCollection):
                                    instance_id=schedule.id)
             deleted_schedule = await self.get_schedule(schedule.departure_station_code, schedule.arrived_station_code)
             if deleted_schedule:
-                raise DbClientException("Станция не удалилась")
+                raise InternalDbError("Станция не удалилась")
             return schedule
         except BaseMongoTransportException as e:
             raise TransportError(str(e))
@@ -76,7 +77,7 @@ class ScheduleDbCollection(BaseDbCollection):
             created_object = await self.get_schedule(new_schedule.departure_station_code,
                                                      new_schedule.arrived_station_code)
             if created_object is None:
-                raise DbClientException("Расписание не добавлено!")
+                raise InternalDbError("Расписание не добавлено!")
             return created_object
         except BaseMongoTransportException as e:
             raise TransportError(str(e))
@@ -128,7 +129,7 @@ class RegisteredStationsDbClient(BaseDbCollection):
                 self._transport.post(self._collection_name, new_station.create_document())
                 created_station = await self.__get_station(new_station.code, new_station.direction)
                 if created_station is None:
-                    raise DbClientException("Станция не зарегистриоовалась!")
+                    raise InternalDbError("Станция не зарегистриоовалась!")
                 return created_station
             else:
                 raise ExistException
@@ -149,7 +150,7 @@ class RegisteredStationsDbClient(BaseDbCollection):
                                        instance_id=station.id)
                 deleted_station = await self.__get_station(code, direction)
                 if deleted_station:
-                    raise DbClientException("Станция не удалилась")
+                    raise InternalDbError("Станция не удалилась")
                 return station
             else:
                 raise NotExistException
@@ -180,7 +181,7 @@ class RegisteredStationsDbClient(BaseDbCollection):
                         instance_id=station.id)
                     updated_station = await self.__get_station(code, new_value)
                     if updated_station is None:
-                        raise DbClientException("Поле не обновилось")
+                        raise InternalDbError("Поле не обновилось")
                     return updated_station
                 else:
                     raise ExistException
