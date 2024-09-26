@@ -20,6 +20,7 @@ class Station(BaseModel):
     title: str
     direction: StationsDirection
 
+
     def to_tuple(self) -> StationInTuple:
         return self.title, self.code
 
@@ -32,4 +33,6 @@ class Schedule(BaseModel):
     departure_station_code: str
     schedule: list[tuple]
     update_time: datetime.datetime
+
+    #TODO c помощью root validator проверить поля уникальны
 
