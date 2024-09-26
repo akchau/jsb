@@ -437,7 +437,11 @@ disable=raw-checker-failed,
         use-symbolic-message-instead,
         use-implicit-booleaness-not-comparison-to-string,
         use-implicit-booleaness-not-comparison-to-zero,
-        no-self-argument
+        no-self-argument,
+        raise-missing-from,
+        no-name-in-module,
+        no-else-return,
+        fixme
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

@@ -1,3 +1,6 @@
+"""
+Модуль взаимодействия контроллера с БД.
+"""
 import asyncio
 from dataclasses import dataclass
 from typing import Type, TypeVar, Generic, Callable
@@ -73,8 +76,7 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         :return:
         """
         schedules = [schedule for schedule in self.collections.schedule.get_all_schedules()
-                     if schedule.arrived_station_code == station.code or
-                     schedule.departure_station_code == station.code]
+                     if station.code in {schedule.arrived_station_code, schedule.departure_station_code}]
         await asyncio.gather(*[self.collections.schedule.delete_schedule(schedule) for schedule in schedules])
 
     async def delete_station(self, code, direction) -> None:
@@ -107,8 +109,8 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         """
         try:
             new_station = StationDocumentModel(**station.dict())
-        except ValidationError:
-            raise ModelError("Ошибка при создании модели станци.")
+        except ValidationError as e:
+            raise ModelError(f"Ошибка при создании модели станци. {e}")
         await self.collections.stations.register_station(new_station)
         await self.__on_station_change()
 

@@ -1,16 +1,23 @@
+"""
+Модуль коллекций.
+"""
 from mongo_db_client.mongo_db_exceptions import BaseMongoTransportException
-from pydantic import ValidationError
 
 from src.controller.controller_types import StationsDirection
 from src.services.db_client.base import BaseDbCollection, CollectionModel
 from src.services.db_client.db_client_types import StationDocumentModel
-from src.services.db_client.exc import ExistException, NotExistException, DbClientException, ModelError, TransportError, \
-    InternalDbError
+from src.services.db_client.exc import ExistException, NotExistException, TransportError, InternalDbError
 
 
 class ScheduleDbCollection(BaseDbCollection):
+    """
+    Коллекция расписания.
+    """
 
     def get_all_schedules(self) -> list[CollectionModel]:
+        """
+        Получение списка расписаний.
+        """
         return self._transport.get_list(self._collection_name, model=self._collection_model)
 
     async def get_schedule(self, departure_station_code: str, arrived_station_code: str) -> CollectionModel | None:

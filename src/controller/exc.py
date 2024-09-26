@@ -7,4 +7,7 @@ class NotAvailable(ControllerException):
 
 
 class InternalError(ControllerException):
+    """
+    Внутреняя ошибка сервиса
+    """
     pass

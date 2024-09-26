@@ -1,3 +1,6 @@
+"""
+Api-клиент
+"""
 from pydantic import ValidationError
 from api_client import ApiClient, RequestException
 
@@ -6,6 +9,9 @@ from src.services.api_client.exc import ApiError
 
 
 class TransportApiClient(ApiClient):
+    """
+    Клиент api Yandex-транспортa.
+    """
 
     async def get_branch_info(self) -> ScheduleFromBaseStation:
         """
