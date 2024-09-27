@@ -1,3 +1,6 @@
+"""
+Типы контроллера
+"""
 import datetime
 from enum import Enum
 from pydantic import BaseModel
@@ -16,12 +19,19 @@ ListStationInTuple = list[StationInTuple]
 
 
 class Station(BaseModel):
+    """
+    Станция
+    """
     code: str
     title: str
     direction: StationsDirection
 
 
     def to_tuple(self) -> StationInTuple:
+        """
+        Преобразование в кортеж.
+        :return:
+        """
         return self.title, self.code
 
     def __eq__(self, other: 'Station') -> bool:
@@ -29,10 +39,12 @@ class Station(BaseModel):
 
 
 class Schedule(BaseModel):
+    """
+    Расписание
+    """
     arrived_station_code: str
     departure_station_code: str
     schedule: list[tuple]
     update_time: datetime.datetime
 
     #TODO c помощью root validator проверить поля уникальны
-

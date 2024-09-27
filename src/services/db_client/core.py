@@ -8,9 +8,10 @@ from typing import Type, TypeVar, Generic, Callable
 from mongo_db_client import MongoDbTransport
 from pydantic import ValidationError
 
+from src.controller import controller_types
 from src.services.db_client.collections import ScheduleDbCollection, RegisteredStationsDbClient
 from src.services.db_client.db_client_types import DbClientAuthModel, ScheduleDocumentModel, StationDocumentModel
-from src.services.db_client.exc import AuthError, ModelError
+from src.services.db_client.exc import AuthError, ModelError, InternalDbError
 
 
 @dataclass
@@ -30,6 +31,8 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
     """
     Взаимодействие контроллера с БД через коллекции.
     """
+
+    #TODO передавать лучше строкой и вернуть проверку
     def __init__(self, db_name: str, db_host: str, dp_port: int, db_user: str, db_password: str,
                  station_domain_model: Type[DomainStationObject],
                  _transport_class: Type[MongoDbTransport] = MongoDbTransport):
@@ -61,6 +64,28 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         self._station_domain_model = station_domain_model
         self.__on_station_change = None
 
+    async def on_station_change(self) -> None:
+        """
+        В передаваемый колбек контролера передаем актуальное состояние станций.
+        :return:
+        """
+        if self.__on_station_change is None:
+            raise InternalDbError("Колбек при изменении состава станций не задан.")
+        current_stations = await self.__get_current_stations()
+        await self.__on_station_change(current_stations)
+
+    async def __get_current_stations(self):
+        """
+        Получение актуального состояния станций для запуска и останова воркеров.
+        :return:
+        """
+        all_stations = await self.get_all_registered_stations()
+        registered_stations_from_moscow = [station for station in all_stations
+                                           if station.direction == controller_types.StationsDirection.FROM_MOSCOW]
+        registered_stations_to_moscow = [station for station in all_stations
+                                           if station.direction == controller_types.StationsDirection.TO_MOSCOW]
+        return registered_stations_to_moscow, registered_stations_from_moscow
+
     def set_on_station_change(self, callback: Callable) -> None:
         """
         Задание колбека при смене состава зарегистрированных станций.
@@ -88,7 +113,7 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         """
         station: StationDocumentModel = await self.collections.stations.delete_station(code, direction)
         await self.__delete_related_schedule(station)
-        await self.__on_station_change()
+        await self.on_station_change()
 
     async def move_station(self, code, direction) -> None:
         """
@@ -99,7 +124,7 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         """
         station: StationDocumentModel = await self.collections.stations.move_station(code, direction)
         await self.__delete_related_schedule(station)
-        await self.__on_station_change()
+        await self.on_station_change()
 
     async def register_station(self, station: DomainStationObject) -> None:
         """
@@ -112,7 +137,7 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         except ValidationError as e:
             raise ModelError(f"Ошибка при создании модели станци. {e}")
         await self.collections.stations.register_station(new_station)
-        await self.__on_station_change()
+        await self.on_station_change()
 
     async def get_all_registered_stations(self, direction=None) -> list[DomainStationObject]:
         """

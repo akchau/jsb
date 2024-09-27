@@ -441,6 +441,7 @@ disable=raw-checker-failed,
         raise-missing-from,
         no-name-in-module,
         no-else-return,
+        too-many-arguments,
         fixme
 
 # Enable the message, report, category or checker with the given id(s). You can

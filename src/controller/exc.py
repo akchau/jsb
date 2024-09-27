@@ -1,13 +1,29 @@
+"""
+Ошибки выбрасываемые контроллером
+"""
+
 class ControllerException(Exception):
-    pass
+    """
+    Базовое исключение контроллера.
+    """
+
+    def __init__(self, message):
+        super().__init__(f"Ошибка контроллера: {message}")
 
 
 class NotAvailable(ControllerException):
-    pass
+    """
+    Ошибка в случае, если метод не доступен.
+    """
+
+    def __init__(self, message):
+        super().__init__(f"Не доступна по причине: {message}")
 
 
 class InternalError(ControllerException):
     """
     Внутреняя ошибка сервиса
     """
-    pass
+
+    def __init__(self, message):
+        super().__init__(f"Внутренняя ошибка {message}")

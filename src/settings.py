@@ -9,7 +9,7 @@ from pydantic import BaseSettings
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-class Settings(BaseSettings):
+class Settings(BaseSettings): # pylint: disable=R0903
     """
     Настройки приложения.
     """
@@ -24,7 +24,6 @@ class Settings(BaseSettings):
     API_KEY: str
     BASE_STATION_CODE: str
 
-    # pylint: disable=R0903
     class Config:
         """
         Конфигурация.

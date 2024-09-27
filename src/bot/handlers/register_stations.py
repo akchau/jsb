@@ -1,3 +1,6 @@
+"""
+Модуль с обработчиками регистрации станций
+"""
 from telegram import InlineKeyboardButton, Update, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
@@ -6,7 +9,7 @@ from src.controller.controller_types import StationsDirection
 from src.init_app import get_app_data
 
 
-async def register_station(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def register_station(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
     """
     Регистрация станции.
     """
@@ -24,7 +27,13 @@ async def register_station(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     return constants.REGISTER_STATION
 
 
-async def register_station_from_moscow(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def register_station_from_moscow(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
+    """
+    Обработчик регистрации станций от Москвы.
+    :param update:
+    :param _:
+    :return:
+    """
     stations = await get_app_data().controller.get_available_for_registration_stations_in_direction(
         StationsDirection.FROM_MOSCOW)
 
@@ -39,7 +48,13 @@ async def register_station_from_moscow(update: Update, context: ContextTypes.DEF
     return constants.REGISTER_STATION_FROM_MOSCOW
 
 
-async def register_station_to_moscow(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def register_station_to_moscow(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
+    """
+    Обработчик регистраций станций.
+    :param update:
+    :param _:
+    :return:
+    """
     stations = await get_app_data().controller.get_available_for_registration_stations_in_direction(
         StationsDirection.TO_MOSCOW)
 

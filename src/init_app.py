@@ -60,6 +60,7 @@ __entity = AppDataClasses.entity_class(
     dp_port=settings.DB_PORT,
     station_domain_model=Station
 )
+__entity.set_on_station_change(callback=lambda x: None)
 
 __controller = AppDataClasses.controller_class(__api_interactor, __entity)
 

@@ -1,3 +1,6 @@
+"""
+Обработчики для бота
+"""
 from telegram.ext import ConversationHandler, CommandHandler, CallbackQueryHandler
 
 from src.bot import constants
@@ -24,18 +27,26 @@ main_conv_handler = ConversationHandler(
                 CallbackQueryHandler(main_menu, pattern="^" + str(constants.MAIN_MENU) + "$")
             ],
             constants.REGISTER_STATION: [
-                CallbackQueryHandler(register_station_from_moscow, pattern="^" + str(constants.REGISTER_STATION_FROM_MOSCOW) + "$"),
-                CallbackQueryHandler(register_station_to_moscow, pattern="^" + str(constants.REGISTER_STATION_TO_MOSCOW) + "$"),
-                CallbackQueryHandler(admin, pattern="^" + str(constants.ADMIN) + "$")
+                CallbackQueryHandler(register_station_from_moscow,
+                                     pattern="^" + str(constants.REGISTER_STATION_FROM_MOSCOW) + "$"),
+                CallbackQueryHandler(register_station_to_moscow,
+                                     pattern="^" + str(constants.REGISTER_STATION_TO_MOSCOW) + "$"),
+                CallbackQueryHandler(admin,
+                                     pattern="^" + str(constants.ADMIN) + "$")
             ],
             constants.REGISTERED_STATIONS: [
-                CallbackQueryHandler(registered_stations_from_moscow, pattern="^" + str(constants.REGISTERED_STATIONS_FROM_MOSCOW) + "$"),
-                CallbackQueryHandler(registered_stations_to_moscow, pattern="^" + str(constants.REGISTERED_STATIONS_TO_MOSCOW) + "$"),
-                CallbackQueryHandler(admin, pattern="^" + str(constants.ADMIN) + "$")
+                CallbackQueryHandler(registered_stations_from_moscow,
+                                     pattern="^" + str(constants.REGISTERED_STATIONS_FROM_MOSCOW) + "$"),
+                CallbackQueryHandler(registered_stations_to_moscow,
+                                     pattern="^" + str(constants.REGISTERED_STATIONS_TO_MOSCOW) + "$"),
+                CallbackQueryHandler(admin,
+                                     pattern="^" + str(constants.ADMIN) + "$")
             ],
             constants.REGISTER_STATION_FROM_MOSCOW: [
-                CallbackQueryHandler(register_station, pattern="^" + str(constants.REGISTER_STATION) + "$"),
-                CallbackQueryHandler(admin, pattern="^" + str(constants.ADMIN) + "$")
+                CallbackQueryHandler(register_station,
+                                     pattern="^" + str(constants.REGISTER_STATION) + "$"),
+                CallbackQueryHandler(admin,
+                                     pattern="^" + str(constants.ADMIN) + "$")
             ],
             constants.REGISTER_STATION_TO_MOSCOW: [
                 CallbackQueryHandler(register_station, pattern="^" + str(constants.REGISTER_STATION) + "$"),

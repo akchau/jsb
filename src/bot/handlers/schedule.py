@@ -1,10 +1,19 @@
+"""
+Модуль обработчиков расписания
+"""
 from telegram import InlineKeyboardButton, Update, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from src.bot import constants
 
 
-async def schedule(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def schedule(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
+    """
+    Обработчик меню расписаня.
+    :param update:
+    :param _:
+    :return:
+    """
     buttons = [
         [InlineKeyboardButton(text="Назад", callback_data=str(constants.MAIN_MENU))]
     ]
@@ -14,7 +23,13 @@ async def schedule(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return constants.SCHEDULE
 
 
-async def departure_station(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def departure_station(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
+    """
+    Обработчик меню станции отправления.
+    :param update:
+    :param _:
+    :return:
+    """
     buttons = [
         [InlineKeyboardButton(text="Назад", callback_data=str(constants.SCHEDULE))]
     ]

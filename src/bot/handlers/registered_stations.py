@@ -30,6 +30,12 @@ async def registered_stations(update: Update, _: ContextTypes.DEFAULT_TYPE) -> i
 
 
 async def registered_stations_from_moscow(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
+    """
+    Регистрация станций от Москвы.
+    :param update:
+    :param _:
+    :return:
+    """
     buttons = [
         [InlineKeyboardButton(text="Назад", callback_data=str(constants.REGISTERED_STATIONS))],
         [InlineKeyboardButton(text="Админка", callback_data=str(constants.ADMIN))]
@@ -45,7 +51,13 @@ async def registered_stations_from_moscow(update: Update, _: ContextTypes.DEFAUL
     return constants.REGISTERED_STATIONS_FROM_MOSCOW
 
 
-async def registered_stations_to_moscow(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def registered_stations_to_moscow(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
+    """
+    Регистрация станций в Москву.
+    :param update:
+    :param _:
+    :return:
+    """
     buttons = [
         [InlineKeyboardButton(text="Назад", callback_data=str(constants.REGISTERED_STATIONS))],
         [InlineKeyboardButton(text="Админка", callback_data=str(constants.ADMIN))]

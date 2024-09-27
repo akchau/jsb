@@ -33,11 +33,16 @@ class DataConstructor:
             clean_value = "🚈"
         elif value == "Пригородный поезд":
             clean_value = "🚂"
-        elif value == "экспресс РЭКС" or value == "фирменный экспресс (билеты c указанием мест)":
+        elif value in ["экспресс РЭКС", "фирменный экспресс (билеты c указанием мест)"]:
             clean_value = "🚝"
         return clean_value
 
     def _construct_string(self, data: dict):
+        """
+        Конструктор строки.
+        :param data:
+        :return:
+        """
         train_type = self._clean_train_type(data["train_type"])
         fulling = self._clean_fulling(data["name"])
         departure = data["departure"]
@@ -45,10 +50,7 @@ class DataConstructor:
         time = f"{departure}-{arrival}"
         duration = data["duration"]
         platform = data["departure_platform"]
-        if duration <= 20:
-            bold_flag = True
-        else:
-            bold_flag = False
+        bold_flag = duration <= 20  # Simplified condition
         if bold_flag:
             schedule_message = f"\n\n<b>{train_type} {time} ({duration}мин. {fulling}) ~{platform}пл.</b>\n"
         else:
@@ -56,7 +58,12 @@ class DataConstructor:
         return schedule_message
 
     def constructor(self, data: dict) -> list:
-        schedule_message = f"Ваше расписание:\n\n"
+        """
+        Конструирование расписания.
+        :param data:
+        :return:
+        """
+        schedule_message = "Ваше расписание:\n\n"
         counter = 0
         result_list = []
         for _, value in data.items():
