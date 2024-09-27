@@ -127,4 +127,6 @@ async def main():
     await __entity.delete_station(direction=StationsDirection.TO_MOSCOW, code="123")
     print(await __entity.get_all_registered_stations())
 
-asyncio.run(main())
+
+if __name__=="__main__":
+    asyncio.run(main())
