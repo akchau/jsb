@@ -5,6 +5,7 @@ from telegram import InlineKeyboardButton, Update, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from src.bot import constants
+from src.bot.bot_types import StationActions
 from src.controller.controller_types import StationsDirection
 from src.init_app import get_app_data
 
@@ -15,57 +16,46 @@ async def register_station(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
     """
     buttons = [
         [
-            InlineKeyboardButton(text="Из Москвы", callback_data=str(constants.REGISTER_STATION_FROM_MOSCOW)),
-            InlineKeyboardButton(text="В Москву", callback_data=str(constants.REGISTER_STATION_TO_MOSCOW)),
+            InlineKeyboardButton(text="Из Москвы 🏡🚄🏢", callback_data=f"{constants.REGISTER_STATION_WITH_DIRECTION}/{StationsDirection.FROM_MOSCOW}"),
+            InlineKeyboardButton(text="В Москву 🏢🚄🏡", callback_data=f"{constants.REGISTER_STATION_WITH_DIRECTION}/{StationsDirection.TO_MOSCOW}"),
         ],
-        [InlineKeyboardButton(text="Назад", callback_data=str(constants.ADMIN))]
+        [InlineKeyboardButton(text="Назад в меню Администратора 🔴⬅️", callback_data=str(constants.ADMIN))]
     ]
     keyboard = InlineKeyboardMarkup(buttons)
     await update.callback_query.answer()
-    await update.callback_query.edit_message_text(text="Выберите направление для регистрации станции:",
+    await update.callback_query.edit_message_text(text="Новая станция 🆕",
                                                   reply_markup=keyboard)
     return constants.REGISTER_STATION
 
 
-async def register_station_from_moscow(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
+async def register_station_with_direction(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
     """
     Обработчик регистрации станций от Москвы.
     :param update:
     :param _:
     :return:
     """
-    stations = await get_app_data().controller.get_available_for_registration_stations_in_direction(
-        StationsDirection.FROM_MOSCOW)
+
+    query = update.callback_query
+    data = query.data
+    direction = data.split("/")[1]
+
+    stations = await get_app_data().controller.get_available_for_registration_stations_in_direction(direction)
+
     buttons = [
-        *[[InlineKeyboardButton(text=station.title, callback_data=f"{constants.REGISTERED_STATIONS_FROM_MOSCOW}:{station.code}")]
+        *[[InlineKeyboardButton(text=station.title,
+                                callback_data=f"{constants.REGISTERED_STATIONS_WITH_DIRECTION}/{direction}/{StationActions.REGISTER}/{station.code}")]
           for station in stations],
-        [InlineKeyboardButton(text="Назад", callback_data=str(constants.REGISTER_STATION))],
-        [InlineKeyboardButton(text="Админка", callback_data=str(constants.ADMIN))]
+        [InlineKeyboardButton(text="Назад к выбору направления 🆕⬅️", callback_data=str(constants.REGISTER_STATION))],
+        [InlineKeyboardButton(text="Назад в меню Администратора 🔴⬅️", callback_data=str(constants.ADMIN))]
     ]
     keyboard = InlineKeyboardMarkup(buttons)
 
+    if direction == StationsDirection.FROM_MOSCOW:
+        text_direction = "Из Москвы 🏡🚄🏢"
+    elif direction == StationsDirection.TO_MOSCOW:
+        text_direction = "В Москву 🏢🚄🏡"
+
     await update.callback_query.answer()
-    await update.callback_query.edit_message_text(text=f"Доступные станции:", reply_markup=keyboard)
-    return constants.REGISTER_STATION_FROM_MOSCOW
-
-
-async def register_station_to_moscow(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
-    """
-    Обработчик регистраций станций.
-    :param update:
-    :param _:
-    :return:
-    """
-    stations = await get_app_data().controller.get_available_for_registration_stations_in_direction(
-        StationsDirection.TO_MOSCOW)
-
-    buttons = [
-        *[[InlineKeyboardButton(text=station.title, callback_data=f"{constants.REGISTERED_STATIONS_TO_MOSCOW}:{station.code}")]
-          for station in stations],
-        [InlineKeyboardButton(text="Назад", callback_data=str(constants.REGISTER_STATION))],
-        [InlineKeyboardButton(text="Админка", callback_data=str(constants.ADMIN))]
-    ]
-    keyboard = InlineKeyboardMarkup(buttons)
-    await update.callback_query.answer()
-    await update.callback_query.edit_message_text(text=f"Доступные станции:", reply_markup=keyboard)
-    return constants.REGISTER_STATION_TO_MOSCOW
+    await update.callback_query.edit_message_text(text=f"Доступные станции {text_direction}", reply_markup=keyboard)
+    return constants.REGISTER_STATION_WITH_DIRECTION
