@@ -6,7 +6,7 @@ from telegram.ext import ContextTypes
 
 from src.bot import constants
 from src.bot.bot_types import StationActions
-from src.controller.controller_types import StationsDirection
+from src.controller.controller_types import StationsDirection, DirectionType
 from src.init_app import get_app_data
 
 
@@ -58,12 +58,7 @@ async def register_station_with_direction(update: Update, _: ContextTypes.DEFAUL
     ]
     keyboard = InlineKeyboardMarkup(buttons)
 
-    if direction == StationsDirection.FROM_MOSCOW:
-        text_direction = "Из Москвы 🏡🚄🏢"
-    elif direction == StationsDirection.TO_MOSCOW:
-        text_direction = "В Москву 🏢🚄🏡"
-    else:
-        raise ValueError("Ошибка напрвления")
+    text_direction = DirectionType(direction=direction).get_text_direction()
 
     await update.callback_query.answer()
     await update.callback_query.edit_message_text(text=f"Доступные станции {text_direction}", reply_markup=keyboard)

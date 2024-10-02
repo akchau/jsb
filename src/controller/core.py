@@ -2,10 +2,10 @@
 Главный модуль контроллера.
 """
 from src.services.api_client.core import ApiInteractor
+from .controller_types import DirectionType, StationsDirection
 from ..services.db_client.core import ScheduleEntity
 from ..services.db_client.exc import ExistException
 from . import controller_types
-
 
 
 class ScheduleController:
@@ -18,7 +18,7 @@ class ScheduleController:
         self.__entity = entity
         self.__entity.set_on_station_change(self.on_change_station_callback)
 
-    async def __get_all_available_stations(self, direction) -> list[controller_types.Station]:
+    async def __get_all_available_stations(self, direction: StationsDirection) -> list[controller_types.Station]:
         """
         Получение доступных для регистрации станции.
         :param direction:
@@ -34,13 +34,12 @@ class ScheduleController:
         """
         print(current_stations)
 
-
-    async def get_registered_stations(self,
-                                      direction: controller_types.StationsDirection) -> list[controller_types.Station]:
+    async def get_registered_stations(self, direction: str) -> list[controller_types.Station]:
         """
         Список станций зарегестированных в данном направлении.
         """
-        return await self.__entity.get_all_registered_stations(direction)
+        clean_direction = DirectionType(direction=direction).direction
+        return await self.__entity.get_all_registered_stations(clean_direction)
 
     async def get_available_for_registration_stations_in_direction(self,
                                                                    direction: controller_types.StationsDirection
@@ -52,35 +51,41 @@ class ScheduleController:
         already_registered_stations: list[controller_types.Station] = await self.get_registered_stations(direction)
         return [station for station in all_stations if station not in already_registered_stations]
 
-    async def register_new_station(self, direction: controller_types.StationsDirection, code: str) -> None:
+    async def register_new_station(self, direction: str, code: str) -> None:
         """
         Регистрация новой станции.
         """
+
+        clean_direction = DirectionType(direction=direction)
         try:
-            all_stations: list[controller_types.Station] = await self.__get_all_available_stations(direction)
+            all_stations: list[controller_types.Station] = await self.__get_all_available_stations(
+                clean_direction.get_direction()
+            )
             for available_station in all_stations:
                 if available_station.code == code:
                     await self.__entity.register_station(available_station)
         except ExistException:
             pass
 
-    async def delete_station(self, direction: controller_types.StationsDirection, code: str) -> None:
+    async def delete_station(self, direction: str, code: str) -> None:
         """
         Удаление станции.
         :param direction: Направление удаляемой станции.
         :param code: Код станции.
         :return:
         """
-        await self.__entity.delete_station(code, direction)
+        clean_direction = DirectionType(direction=direction).direction
+        await self.__entity.delete_station(code, clean_direction)
 
-    async def move_station(self, direction: controller_types.StationsDirection, code: str) -> None:
+    async def move_station(self, direction: str, code: str) -> None:
         """
         Перемещение станции.
         :param direction: Направление перемещаемой станции.
         :param code: Код перемещаемой станции.
         :return:
         """
-        await self.__entity.move_station(code, direction)
+        clean_direction = DirectionType(direction=direction).direction
+        await self.__entity.move_station(code, clean_direction)
 
     # async def refresh_schedules(self, depart):
     #     register_stations = self.service_interface.get_all_registered_stations()

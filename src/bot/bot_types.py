@@ -1,7 +1,13 @@
+"""
+Модели и типы бота.
+"""
 from enum import Enum
 
 
 class StationActions(str, Enum):
-    MOVE = "MOVE",
+    """
+    Действия со станцией.
+    """
+    MOVE = "MOVE"
     DELETE = "DELETE"
     REGISTER = "REGISTER"

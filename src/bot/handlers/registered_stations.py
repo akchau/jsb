@@ -6,7 +6,7 @@ from telegram.ext import ContextTypes
 
 from src.bot import constants
 from src.bot.bot_types import StationActions
-from src.controller.controller_types import StationsDirection
+from src.controller.controller_types import StationsDirection, DirectionType
 from src.init_app import get_app_data
 
 
@@ -19,8 +19,14 @@ async def registered_stations(update: Update, _: ContextTypes.DEFAULT_TYPE) -> i
     """
     buttons = [
         [
-            InlineKeyboardButton(text="Из Москвы 🏡🚄🏢", callback_data=f"{constants.REGISTERED_STATIONS_WITH_DIRECTION}/{StationsDirection.FROM_MOSCOW}"),
-            InlineKeyboardButton(text="В Москву 🏢🚄🏡", callback_data=f"{constants.REGISTERED_STATIONS_WITH_DIRECTION}/{StationsDirection.TO_MOSCOW}"),
+            InlineKeyboardButton(
+                text="Из Москвы 🏡🚄🏢",
+                callback_data=f"{constants.REGISTERED_STATIONS_WITH_DIRECTION}/{StationsDirection.FROM_MOSCOW}"
+            ),
+            InlineKeyboardButton(
+                text="В Москву 🏢🚄🏡",
+                callback_data=f"{constants.REGISTERED_STATIONS_WITH_DIRECTION}/{StationsDirection.TO_MOSCOW}"
+            ),
         ],
         [InlineKeyboardButton(text="Назад в меню Администратора 🔴⬅️", callback_data=str(constants.ADMIN))]
     ]
@@ -60,11 +66,10 @@ async def registered_stations_with_direction(update: Update, _: ContextTypes.DEF
     keyboard = InlineKeyboardMarkup(buttons)
     await update.callback_query.answer()
 
-    if direction == StationsDirection.FROM_MOSCOW:
-        text_direction = "Из Москвы 🏡🚄🏢"
-    elif direction == StationsDirection.TO_MOSCOW:
-        text_direction = "В Москву 🏢🚄🏡"
+    text_direction = DirectionType(direction=direction).get_text_direction()
 
-    await update.callback_query.edit_message_text(text=f"Станции зарегистрированные {text_direction}", reply_markup=keyboard)
+    await update.callback_query.edit_message_text(
+        text=f"Зарегистрированные станции:\nНаправление: {text_direction}",
+        reply_markup=keyboard)
 
     return constants.REGISTERED_STATIONS_WITH_DIRECTION
