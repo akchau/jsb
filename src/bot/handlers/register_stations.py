@@ -36,15 +36,16 @@ async def register_station_from_moscow(update: Update, _: ContextTypes.DEFAULT_T
     """
     stations = await get_app_data().controller.get_available_for_registration_stations_in_direction(
         StationsDirection.FROM_MOSCOW)
-
     buttons = [
+        *[[InlineKeyboardButton(text=station.title, callback_data=f"{constants.REGISTERED_STATIONS_FROM_MOSCOW}:{station.code}")]
+          for station in stations],
         [InlineKeyboardButton(text="Назад", callback_data=str(constants.REGISTER_STATION))],
         [InlineKeyboardButton(text="Админка", callback_data=str(constants.ADMIN))]
     ]
     keyboard = InlineKeyboardMarkup(buttons)
 
     await update.callback_query.answer()
-    await update.callback_query.edit_message_text(text=f"Доступные станции {stations}", reply_markup=keyboard)
+    await update.callback_query.edit_message_text(text=f"Доступные станции:", reply_markup=keyboard)
     return constants.REGISTER_STATION_FROM_MOSCOW
 
 
@@ -59,10 +60,12 @@ async def register_station_to_moscow(update: Update, _: ContextTypes.DEFAULT_TYP
         StationsDirection.TO_MOSCOW)
 
     buttons = [
+        *[[InlineKeyboardButton(text=station.title, callback_data=f"{constants.REGISTERED_STATIONS_TO_MOSCOW}:{station.code}")]
+          for station in stations],
         [InlineKeyboardButton(text="Назад", callback_data=str(constants.REGISTER_STATION))],
         [InlineKeyboardButton(text="Админка", callback_data=str(constants.ADMIN))]
     ]
     keyboard = InlineKeyboardMarkup(buttons)
     await update.callback_query.answer()
-    await update.callback_query.edit_message_text(text=f"Доступные станции {stations}", reply_markup=keyboard)
+    await update.callback_query.edit_message_text(text=f"Доступные станции:", reply_markup=keyboard)
     return constants.REGISTER_STATION_TO_MOSCOW

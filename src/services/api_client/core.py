@@ -60,6 +60,7 @@ class ApiInteractor:
             branch = await self.__api_client.get_branch_info()
             thread = await self.__api_client.get_thread_info(branch.get_thread_uid())
             return thread.ext_get_stations()
+        # TODO тут иногда при плохом соединений слетает, нужен презапуск встроенный или внешний
         except RequestException as e:
             raise ApiError(str(e))
         except ValidationError as e:

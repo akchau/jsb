@@ -46,11 +46,15 @@ main_conv_handler = ConversationHandler(
                 CallbackQueryHandler(register_station,
                                      pattern="^" + str(constants.REGISTER_STATION) + "$"),
                 CallbackQueryHandler(admin,
-                                     pattern="^" + str(constants.ADMIN) + "$")
+                                     pattern="^" + str(constants.ADMIN) + "$"),
+                CallbackQueryHandler(registered_stations_from_moscow,
+                                     pattern="^" + str(constants.REGISTERED_STATIONS_FROM_MOSCOW))
             ],
             constants.REGISTER_STATION_TO_MOSCOW: [
                 CallbackQueryHandler(register_station, pattern="^" + str(constants.REGISTER_STATION) + "$"),
-                CallbackQueryHandler(admin, pattern="^" + str(constants.ADMIN) + "$")
+                CallbackQueryHandler(admin, pattern="^" + str(constants.ADMIN) + "$"),
+                CallbackQueryHandler(registered_stations_to_moscow,
+                                     pattern="^" + str(constants.REGISTERED_STATIONS_TO_MOSCOW))
             ],
             constants.REGISTERED_STATIONS_FROM_MOSCOW: [
                 CallbackQueryHandler(registered_stations, pattern="^" + str(constants.REGISTERED_STATIONS) + "$"),
