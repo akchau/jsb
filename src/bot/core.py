@@ -26,5 +26,6 @@ def start_bot() -> None:
     except NetworkError:
         logger.error("Не удалось запустить бот. Недоступна сеть!")
 
+
 if __name__ == "__main__":
     start_bot()
