@@ -12,7 +12,7 @@ async def main_menu(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
     Главное меню - точка входа.
     """
     buttons = [
-        [InlineKeyboardButton(text="Расписание 📅", callback_data=str(constants.SCHEDULE)),
+        [InlineKeyboardButton(text="Расписание 📅", callback_data=str(constants.DEPARTURE_STATION)),
          InlineKeyboardButton(text="Админка 🔴", callback_data=str(constants.ADMIN))],
     ]
     keyboard = InlineKeyboardMarkup(buttons)

@@ -64,36 +64,6 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         self._station_domain_model = station_domain_model
         self.__on_station_change = None
 
-    async def on_station_change(self) -> None:
-        """
-        В передаваемый колбек контролера передаем актуальное состояние станций.
-        :return:
-        """
-        if self.__on_station_change is None:
-            raise InternalDbError("Колбек при изменении состава станций не задан.")
-        current_stations = await self.__get_current_stations()
-        await self.__on_station_change(current_stations)
-
-    async def __get_current_stations(self):
-        """
-        Получение актуального состояния станций для запуска и останова воркеров.
-        :return:
-        """
-        all_stations = await self.get_all_registered_stations()
-        registered_stations_from_moscow = [station for station in all_stations
-                                           if station.direction == controller_types.StationsDirection.FROM_MOSCOW]
-        registered_stations_to_moscow = [station for station in all_stations
-                                           if station.direction == controller_types.StationsDirection.TO_MOSCOW]
-        return registered_stations_to_moscow, registered_stations_from_moscow
-
-    def set_on_station_change(self, callback: Callable) -> None:
-        """
-        Задание колбека при смене состава зарегистрированных станций.
-        :param callback: Коллбек, который вызовется при смене состава зарегистрированных станций
-        :return:
-        """
-        self.__on_station_change = callback
-
     async def __delete_related_schedule(self, station: StationDocumentModel) -> None:
         """
         Удаление связанных станций.
@@ -104,6 +74,30 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
                      if station.code in {schedule.arrived_station_code, schedule.departure_station_code}]
         await asyncio.gather(*[self.collections.schedule.delete_schedule(schedule) for schedule in schedules])
 
+    async def _on_station_change(self) -> None:
+        """
+        В передаваемый колбек контролера передаем актуальное состояние станций.
+        :return:
+        """
+        if self.__on_station_change is None:
+            raise InternalDbError("Колбек при изменении состава станций не задан.")
+
+        all_stations = await self.get_all_registered_stations()
+        registered_stations_from_moscow = [station for station in all_stations
+                                           if station.direction == controller_types.StationsDirection.FROM_MOSCOW]
+        registered_stations_to_moscow = [station for station in all_stations
+                                         if station.direction == controller_types.StationsDirection.TO_MOSCOW]
+
+        await self.__on_station_change((registered_stations_to_moscow, registered_stations_from_moscow))
+
+    def set_on_station_change(self, callback: Callable) -> None:
+        """
+        Задание колбека при смене состава зарегистрированных станций.
+        :param callback: Коллбек, который вызовется при смене состава зарегистрированных станций
+        :return:
+        """
+        self.__on_station_change = callback
+
     async def delete_station(self, code, direction) -> None:
         """
         Удаление станции.
@@ -113,7 +107,7 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         """
         station: StationDocumentModel = await self.collections.stations.delete_station(code, direction)
         await self.__delete_related_schedule(station)
-        await self.on_station_change()
+        await self._on_station_change()
 
     async def move_station(self, code, direction) -> None:
         """
@@ -124,7 +118,7 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         """
         station: StationDocumentModel = await self.collections.stations.move_station(code, direction)
         await self.__delete_related_schedule(station)
-        await self.on_station_change()
+        await self._on_station_change()
 
     async def register_station(self, station: DomainStationObject) -> None:
         """
@@ -137,7 +131,7 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         except ValidationError as e:
             raise ModelError(f"Ошибка при создании модели станци. {e}")
         await self.collections.stations.register_station(new_station)
-        await self.on_station_change()
+        await self._on_station_change()
 
     async def get_all_registered_stations(self, direction=None) -> list[DomainStationObject]:
         """
@@ -145,6 +139,7 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         :param direction:
         :return:
         """
+
         try:
             return [
                 self._station_domain_model(**station.dict())

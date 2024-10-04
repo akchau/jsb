@@ -34,11 +34,15 @@ class ScheduleController:
         """
         print(current_stations)
 
-    async def get_registered_stations(self, direction: str) -> list[controller_types.Station]:
+    async def get_registered_stations(self, direction: str = None, exclude_direction:bool = False) -> list[controller_types.Station]:
         """
         Список станций зарегестированных в данном направлении.
         """
-        clean_direction = DirectionType(direction=direction).direction
+        clean_direction = DirectionType(direction=direction).direction \
+            if direction is not None else None
+        if direction is not None and exclude_direction:
+            clean_direction = StationsDirection.FROM_MOSCOW if clean_direction == StationsDirection.TO_MOSCOW else (
+                StationsDirection.TO_MOSCOW)
         return await self.__entity.get_all_registered_stations(clean_direction)
 
     async def get_available_for_registration_stations_in_direction(self,

@@ -57,7 +57,7 @@ class DirectionType(BaseModel):
 
     direction: str
 
-    def get_text_direction(self):
+    def get_text_direction(self) -> StationsDirection:
         """
         Представление направления строкой для бота.
         :return: Направление.
@@ -70,6 +70,18 @@ class DirectionType(BaseModel):
             raise ValueError("Ошибка напрвления")
 
     def get_direction(self):
+        """
+        Представление направления строкой для бота.
+        :return: Направление.
+        """
+        if self.direction == StationsDirection.FROM_MOSCOW:
+            return StationsDirection.FROM_MOSCOW
+        elif self.direction == StationsDirection.TO_MOSCOW:
+            return StationsDirection.TO_MOSCOW
+        else:
+            raise ValueError("Ошибка напрвления")
+
+    def get_another(self):
         """
         Представление направления строкой для бота.
         :return: Направление.

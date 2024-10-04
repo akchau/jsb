@@ -9,7 +9,7 @@ from src.bot.handlers.edit_station import edit_station
 from src.bot.handlers.main_menu import main_menu
 from src.bot.handlers.register_stations import register_station, register_station_with_direction
 from src.bot.handlers.registered_stations import registered_stations, registered_stations_with_direction
-from src.bot.handlers.schedule import schedule
+from src.bot.handlers.schedule import arrived_station, departure_station, schedule_view
 from src.bot.handlers.stop import stop
 
 main_conv_handler = ConversationHandler(
@@ -19,7 +19,7 @@ main_conv_handler = ConversationHandler(
             # ГЛАВНОЕ МЕНЮ
             constants.MAIN_MENU: [
                 CallbackQueryHandler(admin, pattern="^" + str(constants.ADMIN) + "$"),
-                CallbackQueryHandler(schedule, pattern="^" + str(constants.SCHEDULE) + "$")
+                CallbackQueryHandler(departure_station, pattern="^" + str(constants.DEPARTURE_STATION) + "$")
 
             ],
 
@@ -65,20 +65,30 @@ main_conv_handler = ConversationHandler(
                 CallbackQueryHandler(admin, pattern="^" + str(constants.ADMIN) + "$")
             ],
 
-            # ВЫБОР НАПРАВЛЕНИЯ РАСПИСАНИЯ
-            constants.SCHEDULE: [
-                CallbackQueryHandler(main_menu, pattern="^" + str(constants.MAIN_MENU) + "$")
-            ],
 
             # СТАНЦИЯ ОТПРАВЛЕНИЯ
             constants.DEPARTURE_STATION: [
-                CallbackQueryHandler(schedule, pattern="^" + str(constants.SCHEDULE) + "$")
+                CallbackQueryHandler(main_menu, pattern="^" + str(constants.MAIN_MENU) + "$"),
+                CallbackQueryHandler(arrived_station, pattern="^" + str(constants.ARRIVED_STATION))
             ],
-
             # ВЫБОР ДЕЙСТВИЯ СО СТАНЦИЕЙ
             constants.EDIT_STATION: [
                 CallbackQueryHandler(registered_stations_with_direction,
                                      pattern="^" + str(constants.REGISTERED_STATIONS_WITH_DIRECTION))
+            ],
+
+            # СТАНЦИЯ ПРИБЫТИЯ
+            constants.ARRIVED_STATION: [
+                CallbackQueryHandler(main_menu, pattern="^" + str(constants.MAIN_MENU) + "$"),
+                CallbackQueryHandler(schedule_view, pattern="^" + str(constants.SCHEDULE_VIEW)),
+                CallbackQueryHandler(departure_station, pattern="^" + str(constants.DEPARTURE_STATION))
+            ],
+
+            # ОТОБРАЖЕНИЕ С ПАГИНАЦИЕЙ
+            constants.SCHEDULE_VIEW: [
+                CallbackQueryHandler(arrived_station, pattern="^" + str(constants.ARRIVED_STATION)),
+                CallbackQueryHandler(departure_station, pattern="^" + str(constants.DEPARTURE_STATION)),
+                CallbackQueryHandler(main_menu, pattern="^" + str(constants.MAIN_MENU) + "$")
             ]
         },
         fallbacks=[CommandHandler("stop", stop)],
