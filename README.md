@@ -13,3 +13,7 @@
 ### Cхема бота
 ![Схема бота](src/bot/docs/diagram.png)
 Диаграма бота нарисована с помощью [сервиса](https://programforyou.ru/block-diagram-redactor)
+## Схема зависимостей
+![Схема зависимостей](docs/packages_Bot.png)
+## Схема классов
+![Схема классов](docs/classes_Bot.png)

@@ -4,14 +4,17 @@ Api-клиент
 from pydantic import ValidationError
 from api_client import ApiClient, RequestException
 
-from src.services.api_client.api_client_types import ScheduleFromBaseStation, ThreadData
-from src.services.api_client.exc import ApiError
+from src.services.api_client.api_client_types import ScheduleFromBaseStation, ThreadData, StoreType
+from src.services.api_client.exc import ParsingApiResponseError, InternalApiError
 
 
 class TransportApiClient(ApiClient):
     """
     Клиент api Yandex-транспортa.
     """
+
+    _schedule_from_base_station_model = ScheduleFromBaseStation
+    _thread_data_model = ThreadData
 
     async def get_branch_info(self) -> ScheduleFromBaseStation:
         """
@@ -26,7 +29,7 @@ class TransportApiClient(ApiClient):
                 "transport_types": "suburban"
             }
         )
-        return ScheduleFromBaseStation.parse_obj(result)
+        return self._schedule_from_base_station_model.parse_obj(result)
 
     async def get_thread_info(self, thread_uid: str) -> ThreadData:
         """
@@ -40,15 +43,20 @@ class TransportApiClient(ApiClient):
                 "uid": thread_uid
             }
         )
-        return ThreadData.parse_obj(all_stations_data)
+        return self._thread_data_model.parse_obj(all_stations_data)
 
 
 class ApiInteractor:
     """
     Интерактор для работы с API.
     """
-    def __init__(self, api_client: TransportApiClient):
-        self.__api_client = api_client
+    def __init__(self, base_url: str, api_key: str, base_station_code: str):
+        self._store_type = StoreType
+        self.__api_client = TransportApiClient(base_url=base_url, api_prefix="v3.0", store=self._store_type(
+            api_key=api_key, base_station_code=base_station_code
+        ))
+        self._internal_api_error = InternalApiError
+        self._parsing_api_error = ParsingApiResponseError
 
     async def get_all_stations_for_base_stations_thread(self) -> list[dict]:
         """
@@ -61,6 +69,6 @@ class ApiInteractor:
             return thread.ext_get_stations()
         # TODO тут иногда при плохом соединений слетает, нужен презапуск встроенный или внешний
         except RequestException as e:
-            raise ApiError(str(e))
+            raise self._internal_api_error(str(e))
         except ValidationError as e:
-            raise ApiError(f"Ошибка валидации ответа API {str(e)}")
+            raise self._parsing_api_error(f"Ошибка валидации ответа API {str(e)}")

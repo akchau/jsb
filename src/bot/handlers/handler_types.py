@@ -3,6 +3,11 @@ from typing import Optional
 from pydantic import BaseModel
 
 
+(MAIN_MENU, ADMIN, REGISTER_STATION, REGISTER_STATION_WITH_DIRECTION,
+ REGISTERED_STATIONS, REGISTERED_STATIONS_WITH_DIRECTION, DEPARTURE_STATION, ARRIVED_STATION,
+ EDIT_STATION, SCHEDULE_VIEW) = range(10)
+
+
 class MenuSection(BaseModel):
     title: str
     back_to_title: Optional[str] = "Неизвестное значение"

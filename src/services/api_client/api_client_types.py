@@ -37,7 +37,8 @@ class ScheduleFromBaseStation(BaseModel):
     """
     Расписание с базовой станции.
     """
-    schedule: list[Schedule]
+    _schedule_model = Schedule
+    schedule: list[_schedule_model]
 
     def get_thread_uid(self, number_of_thread=0) -> str:
         """
@@ -72,7 +73,8 @@ class ThreadData(BaseModel):
     """
     Данные ветки - модель для парсинга API.
     """
-    stops: list[StopInfo]
+    _stop_info_model = StopInfo
+    stops: list[_stop_info_model]
 
     def ext_get_stations(self) -> list[dict]:
         """

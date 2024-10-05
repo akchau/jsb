@@ -23,6 +23,7 @@ class Settings(BaseSettings): # pylint: disable=R0903
     API_BASE_URL: str
     API_KEY: str
     BASE_STATION_CODE: str
+    PAGINATION: int
 
     class Config:
         """

@@ -1,6 +1,6 @@
 import sys
 
-from src.bot.core import start_bot
+from src import start_bot
 
 
 class CommandError(Exception):

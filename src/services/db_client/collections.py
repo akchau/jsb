@@ -3,16 +3,16 @@
 """
 from mongo_db_client.mongo_db_exceptions import BaseMongoTransportException
 
-from src.controller.controller_types import StationsDirection
 from src.services.db_client.base import BaseDbCollection, CollectionModel
-from src.services.db_client.db_client_types import StationDocumentModel
-from src.services.db_client.exc import ExistException, NotExistException, TransportError, InternalDbError
+from src.services.db_client.db_client_types import ScheduleDocumentModel, StationDocumentModel
+from src.services.db_client.exc import InternalDbError
 
 
 class ScheduleDbCollection(BaseDbCollection):
     """
     Коллекция расписания.
     """
+    _collection_model = ScheduleDocumentModel
 
     def get_all_schedules(self) -> list[CollectionModel]:
         """
@@ -36,7 +36,7 @@ class ScheduleDbCollection(BaseDbCollection):
                     return schedule
             return None
         except BaseMongoTransportException as e:
-            raise TransportError(str(e))
+            raise self._transport_error(str(e))
 
     async def delete_schedule(self, schedule: CollectionModel) -> CollectionModel:
         """
@@ -53,7 +53,7 @@ class ScheduleDbCollection(BaseDbCollection):
                 raise InternalDbError("Станция не удалилась")
             return schedule
         except BaseMongoTransportException as e:
-            raise TransportError(str(e))
+            raise self._transport_error(str(e))
 
     async def write_schedule(self, new_schedule: CollectionModel) -> CollectionModel:
         """
@@ -87,19 +87,20 @@ class ScheduleDbCollection(BaseDbCollection):
                 raise InternalDbError("Расписание не добавлено!")
             return created_object
         except BaseMongoTransportException as e:
-            raise TransportError(str(e))
+            raise self._transport_error(str(e))
 
 
 # TODO перенести слой с подтверждением удаления  в отдельный слой, а клиент только для логики БД???
-class RegisteredStationsDbClient(BaseDbCollection):
+class RegisteredStationsDbCollection(BaseDbCollection):
     """
     Клиент зарегистрированных станций.
 
     - Получение списка станций.
     - Регистрация новой станции.
     """
+    _collection_model = StationDocumentModel
 
-    async def __get_station(self, code: str, direction: StationsDirection) -> CollectionModel | None:
+    async def __get_station(self, code: str, direction: str) -> CollectionModel | None:
         all_stations_in_direction = await self.get_all_registered_stations(direction)
         result = [station for station in all_stations_in_direction
                   if station.code == code]
@@ -107,7 +108,7 @@ class RegisteredStationsDbClient(BaseDbCollection):
             return None
         return result[0]
 
-    async def get_all_registered_stations(self, direction: StationsDirection = None) -> list[CollectionModel]:
+    async def get_all_registered_stations(self, direction: str = None) -> list[CollectionModel]:
         """
         Получить все зарегестрированные станции.
         :param direction: Направление, в котором ищутся зарегестрированные станции.
@@ -115,9 +116,9 @@ class RegisteredStationsDbClient(BaseDbCollection):
         """
         try:
             all_stations: list[CollectionModel] = self._transport.get_list(collection_name=self._collection_name,
-                                                                           model=StationDocumentModel)
+                                                                           model=self._collection_model)
         except BaseMongoTransportException as e:
-            raise TransportError(str(e))
+            raise self._transport_error(str(e))
 
         # При необходимости есть фильтрация по direction
         if direction is not None:
@@ -139,11 +140,11 @@ class RegisteredStationsDbClient(BaseDbCollection):
                     raise InternalDbError("Станция не зарегистриоовалась!")
                 return created_station
             else:
-                raise ExistException
+                raise self._exist_exception
         except BaseMongoTransportException as e:
-            raise TransportError(str(e))
+            raise self._transport_error(str(e))
 
-    async def delete_station(self, code: str, direction: StationsDirection) -> CollectionModel:
+    async def delete_station(self, code: str, direction: str) -> CollectionModel:
         """
         Удалить станцию.
         :param code: Код станци.
@@ -160,11 +161,11 @@ class RegisteredStationsDbClient(BaseDbCollection):
                     raise InternalDbError("Станция не удалилась")
                 return station
             else:
-                raise NotExistException
+                raise self._not_exist_exception
         except BaseMongoTransportException as e:
-            raise TransportError(str(e))
+            raise self._transport_error(str(e))
 
-    async def move_station(self, code: str, direction: StationsDirection) -> CollectionModel:
+    async def move_station(self, code: str, direction: str, new_direction: str) -> CollectionModel:
         """
         Переместить станцию.
         :param code: Код станци.
@@ -174,25 +175,21 @@ class RegisteredStationsDbClient(BaseDbCollection):
         try:
             station = await self.__get_station(code, direction)
             if station:
-
-                new_value = (StationsDirection.TO_MOSCOW if station.direction == StationsDirection.FROM_MOSCOW \
-                             else StationsDirection.FROM_MOSCOW)
-
                 # TODO Надо оттестить этот момент
-                this_station = await self.__get_station(code, new_value)
+                this_station = await self.__get_station(code, new_direction)
                 if this_station is None:
                     self._transport.update_field(
                         collection_name=self._collection_name,
                         field_name="direction",
-                        new_value=new_value,
+                        new_value=new_direction,
                         instance_id=station.id)
-                    updated_station = await self.__get_station(code, new_value)
+                    updated_station = await self.__get_station(code, new_direction)
                     if updated_station is None:
                         raise InternalDbError("Поле не обновилось")
                     return updated_station
                 else:
-                    raise ExistException
+                    raise self._exist_exception
             else:
-                raise NotExistException
+                raise self._not_exist_exception
         except BaseMongoTransportException as e:
-            raise TransportError(str(e))
+            raise self._transport_error(str(e))

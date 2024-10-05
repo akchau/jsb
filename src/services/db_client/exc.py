@@ -1,7 +1,6 @@
 """
 Модуль с исключениями БД.
 """
-
 class DbClientException(Exception):
     """
     Базовое исклюючение при работе с БД.
@@ -10,7 +9,7 @@ class DbClientException(Exception):
         super().__init__(message)
 
 
-class InternalDbError(Exception):
+class InternalDbError(DbClientException):
     """
     Внутренняя ошибка в БД.
     """
@@ -18,7 +17,7 @@ class InternalDbError(Exception):
         super().__init__(f"Внутренняя ошибка сервиса: {message}")
 
 
-class TransportError(Exception):
+class TransportError(DbClientException):
     """
     Ошибка в транспорте БД.
     """
@@ -26,20 +25,12 @@ class TransportError(Exception):
         super().__init__(f"Ошибка при парсинге моделей: {message}")
 
 
-class ModelError(Exception):
+class ModelError(DbClientException):
     """
     Ошибка при парсинге моделей.
     """
     def __init__(self, message: str):
         super().__init__(f"Ошибка при парсинге моделей: {message}")
-
-
-class AuthError(DbClientException):
-    """
-    Ошибка при аутентификации классов.
-    """
-    def __init__(self, message: str):
-        super().__init__(f"Проблема аутентификации: {message}")
 
 
 class ExistException(DbClientException):
