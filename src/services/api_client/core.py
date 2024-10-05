@@ -26,7 +26,6 @@ class TransportApiClient(ApiClient):
                 "transport_types": "suburban"
             }
         )
-        print(result)
         return ScheduleFromBaseStation.parse_obj(result)
 
     async def get_thread_info(self, thread_uid: str) -> ThreadData:

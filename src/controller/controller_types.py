@@ -14,6 +14,12 @@ class StationsDirection(str, Enum):
     FROM_MOSCOW = "FROM_MOSCOW"
 
 
+class StationActionEnum(str, Enum):
+    DELETE = "DELETE"
+    MOVE = "MOVE"
+    REGISTER = "REGISTER"
+
+
 StationInTuple = tuple[str, str]
 ListStationInTuple = list[StationInTuple]
 
@@ -25,14 +31,6 @@ class Station(BaseModel):
     code: str
     title: str
     direction: StationsDirection
-
-
-    def to_tuple(self) -> StationInTuple:
-        """
-        Преобразование в кортеж.
-        :return:
-        """
-        return self.title, self.code
 
     def __eq__(self, other: 'Station') -> bool:
         return self.code == other.code and self.direction == other.direction
@@ -57,7 +55,7 @@ class DirectionType(BaseModel):
 
     direction: str
 
-    def get_text_direction(self) -> StationsDirection:
+    def get_text_direction(self) -> str:
         """
         Представление направления строкой для бота.
         :return: Направление.
@@ -69,7 +67,7 @@ class DirectionType(BaseModel):
         else:
             raise ValueError("Ошибка напрвления")
 
-    def get_direction(self):
+    def get_direction(self) -> StationsDirection:
         """
         Представление направления строкой для бота.
         :return: Направление.
@@ -81,7 +79,7 @@ class DirectionType(BaseModel):
         else:
             raise ValueError("Ошибка напрвления")
 
-    def get_another(self):
+    def get_another(self) -> StationsDirection:
         """
         Представление направления строкой для бота.
         :return: Направление.

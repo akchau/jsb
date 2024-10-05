@@ -15,7 +15,7 @@ async def departure_station(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int
     :param _:
     :return:
     """
-    stations = await get_app_data().controller.get_registered_stations()
+    stations = await get_app_data().controller.get_stations()
     buttons = [
         [InlineKeyboardButton(text="Главное меню", callback_data=str(constants.MAIN_MENU))],
         *[[InlineKeyboardButton(text=station.title, callback_data=f"{constants.ARRIVED_STATION}/"
@@ -40,7 +40,7 @@ async def arrived_station(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
     data = query.data
     departure_code = data.split("/")[1]
     direction = data.split("/")[2]
-    stations = await get_app_data().controller.get_registered_stations(direction, exclude_direction=True)
+    stations = await get_app_data().controller.get_stations(direction, exclude_direction=True)
 
     buttons = [
         *[[InlineKeyboardButton(

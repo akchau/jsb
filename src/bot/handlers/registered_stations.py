@@ -5,8 +5,7 @@ from telegram import InlineKeyboardButton, Update, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from src.bot import constants
-from src.bot.bot_types import StationActions
-from src.controller.controller_types import StationsDirection, DirectionType
+from src.controller.controller_types import StationsDirection, DirectionType, StationActionEnum
 from src.init_app import get_app_data
 
 
@@ -47,15 +46,11 @@ async def registered_stations_with_direction(update: Update, _: ContextTypes.DEF
     data = query.data
     direction = data.split("/")[1]
     if len(data.split("/")) == 4:
-        action = data.split("/")[2]
+        action: StationActionEnum = data.split("/")[2]
         code = data.split("/")[3]
-        if action == StationActions.REGISTER:
-            await get_app_data().controller.register_new_station(direction=direction, code=code)
-        elif action == StationActions.MOVE:
-            await get_app_data().controller.move_station(direction=direction, code=code)
-        elif action == StationActions.DELETE:
-            await get_app_data().controller.delete_station(direction=direction, code=code)
-    stations = await get_app_data().controller.get_registered_stations(direction=direction)
+        await get_app_data().controller.station_action(direction=direction, code=code, action=action)
+
+    stations = await get_app_data().controller.get_stations(direction=direction)
 
     buttons = [
         *[[InlineKeyboardButton(station.title, callback_data=f"{constants.EDIT_STATION}/{direction}/{station.code}")]
