@@ -21,7 +21,7 @@ async def register_station(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
                 text=MenuSections.register_station_with_direction_from_moscow.title,
                 callback_data=await create_data(REGISTER_STATION_WITH_DIRECTION,
                                                 direction)
-            ) for direction in directions],
+            ) for direction in directions.__members__],
 
         ],
         [InlineKeyboardButton(text=MenuSections.main_menu.back_to_title, callback_data=str(MAIN_MENU))],
@@ -44,6 +44,7 @@ async def register_station_with_direction(update: Update, _: ContextTypes.DEFAUL
 
     direction = await parse_data(update)
     stations, action, text_direction = await get_app_data().controller.get_stations(direction, for_registration=True)
+    print(stations, action, text_direction)
     buttons = [
         *[[InlineKeyboardButton(text=station.title,
                                 callback_data=(await create_data(REGISTERED_STATIONS_WITH_DIRECTION,
@@ -66,6 +67,7 @@ async def register_station_with_direction(update: Update, _: ContextTypes.DEFAUL
     ]
     keyboard = InlineKeyboardMarkup(buttons)
     await update.callback_query.answer()
+    print(text_direction)
     await update.callback_query.edit_message_text(text=f"Доступные для регистрации станции\nНаправление: {text_direction}",
                                                   reply_markup=keyboard)
     return REGISTER_STATION_WITH_DIRECTION

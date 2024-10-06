@@ -1,10 +1,12 @@
 """
 Api-клиент
 """
+import datetime
+
 from pydantic import ValidationError
 from api_client import ApiClient, RequestException
 
-from src.services.api_client.api_client_types import ScheduleFromBaseStation, ThreadData, StoreType
+from src.services.api_client.api_client_types import ScheduleFromBaseStation, ThreadData, StoreType, ScheduleModel
 from src.services.api_client.exc import ParsingApiResponseError, InternalApiError
 
 
@@ -45,6 +47,18 @@ class TransportApiClient(ApiClient):
         )
         return self._thread_data_model.parse_obj(all_stations_data)
 
+    async def get_schedule(self, departure_station_code: str, arrived_station_code: str):
+        schedule = self.transport.get(
+            path="search/",
+            params={
+                "apikey": self.store.api_key,
+                "from": departure_station_code,
+                "to": arrived_station_code,
+                "date": datetime.datetime.today()
+            }
+        )
+        return ScheduleModel.parse_obj(schedule)
+
 
 class ApiInteractor:
     """
@@ -57,6 +71,14 @@ class ApiInteractor:
         ))
         self._internal_api_error = InternalApiError
         self._parsing_api_error = ParsingApiResponseError
+
+    async def get_schedule(self, departure_station_code, arrived_station_code):
+        try:
+            return await self.__api_client.get_schedule(departure_station_code, arrived_station_code)
+        except RequestException as e:
+            raise self._internal_api_error(str(e))
+        except ValidationError as e:
+            raise self._parsing_api_error(f"Ошибка валидации ответа API {str(e)}")
 
     async def get_all_stations_for_base_stations_thread(self) -> list[dict]:
         """

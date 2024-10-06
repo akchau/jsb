@@ -1,6 +1,9 @@
 """
 Модели api-клиента.
 """
+from datetime import datetime
+from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -85,3 +88,35 @@ class ThreadData(BaseModel):
             station.get_info()
             for station in self.stops
         ]
+
+class TransportSubtype(BaseModel):
+    title: str
+    code: str
+
+class Thread(BaseModel):
+    title: str
+    short_title: str
+    express_type: Optional[str]
+    vehicle: Optional[str]
+    transport_subtype: TransportSubtype
+
+class Segment(BaseModel):
+    thread: Thread
+    stops: str
+    departure_platform: Optional[str]
+    arrival_platform: Optional[str]
+    duration: float
+    departure: datetime
+    arrival: datetime
+
+
+class ScheduleModel(BaseModel):
+    segments: list[Segment]
+
+    def ext(self):
+        result = []
+        for segment in self.segments:
+            result.append((segment.thread.title, segment.arrival, segment.departure,
+                           (segment.duration)/60, segment.departure_platform, segment.arrival_platform,
+                           segment.stops, segment.thread.transport_subtype.title, segment.thread.transport_subtype.code))
+        return result

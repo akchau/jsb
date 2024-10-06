@@ -106,3 +106,13 @@ class ScheduleController:
 
     async def get_edit_menu_values(self):
         return self._action_enum.DELETE, self._action_enum.MOVE
+
+    async def get_schedule(self, departure_station_code, arrived_station_code):
+        stations = await self._entity.get_all_registered_stations()
+        schedule = await self._api.get_schedule(departure_station_code, arrived_station_code)
+        # await self._entity.write_schedule(schedule)
+        return self._schedule_constructor.constructor(schedule.ext(),
+                                                      target_station_one=[station.title for station in stations
+                                                                          if station.code == departure_station_code][0],
+                                                      target_station_two=[station.title for station in stations
+                                                                          if station.code == arrived_station_code][0])

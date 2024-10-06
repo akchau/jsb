@@ -1,6 +1,8 @@
 """
 Модуль отрисовки расписания в Telegram.
 """
+import datetime
+
 
 class DataConstructor:
     """
@@ -11,13 +13,13 @@ class DataConstructor:
         self.__pagination = pagination
 
     @staticmethod
-    def _clean_fulling(value: str) -> str:
+    def _clean_fulling(value: str, target_station_one, target_station_two, speed) -> str:
         """
         Алгоритм проверки загруженности.
         :param value:
         :return:
         """
-        if "Железнодорожная" in value:
+        if target_station_one in value or target_station_two in value or speed:
             return "🍃"
         else:
             return "♨️"
@@ -38,27 +40,31 @@ class DataConstructor:
             clean_value = "🚝"
         return clean_value
 
-    def _construct_string(self, data: dict):
+    def _construct_string(self, string_tuple: tuple, regular_duration: int, target_station_one, target_station_two):
         """
         Конструктор строки.
         :param data:
         :return:
         """
-        train_type = self._clean_train_type(data["train_type"])
-        fulling = self._clean_fulling(data["name"])
-        departure = data["departure"]
-        arrival = data["arrival"]
-        time = f"{departure}-{arrival}"
-        duration = data["duration"]
-        platform = data["departure_platform"]
-        bold_flag = duration <= 20  # Simplified condition
-        if bold_flag:
-            schedule_message = f"\n\n<b>{train_type} {time} ({duration}мин. {fulling}) ~{platform}пл.</b>\n"
-        else:
-            schedule_message = f"\n{train_type} {time} ({duration}мин. {fulling}) ~{platform}пл."
-        return schedule_message
+        title, arrived_time, departure_time, duration, platform, arrival_platform, stops, train_type, _ = string_tuple
+        train_type = self._clean_train_type(train_type)
 
-    def constructor(self, data: dict) -> list:
+        clean_departure_time = departure_time.strftime("%H:%M")
+        clean_arrived_time = arrived_time.strftime("%H:%M")
+        time = f"{clean_departure_time}-{clean_arrived_time}"
+        bold_flag = duration / regular_duration <= 0.85
+
+        fulling = self._clean_fulling(title, target_station_one=target_station_one, target_station_two=target_station_two,
+                                      speed=bold_flag)
+        schedule_message = None
+        if datetime.datetime.now().time().hour < int(clean_departure_time.split(":")[0]):
+            if bold_flag:
+                schedule_message = f"\n<b>{train_type} {time} ({int(duration)}мин. {fulling}) ~{platform}.</b>"
+            else:
+                schedule_message = f"\n{train_type} {time} ({int(duration)}мин. {fulling}) ~{platform}"
+        return schedule_message if schedule_message is not None else ""
+
+    def constructor(self, data: list[tuple], target_station_one, target_station_two) -> list:
         """
         Конструирование расписания.
         :param data:
@@ -67,13 +73,14 @@ class DataConstructor:
         schedule_message = "Ваше расписание:\n\n"
         counter = 0
         result_list = []
-        for _, value in data.items():
+        regular_duration = round(sum([int(obj[3]) for obj in data])/len(data))
+        for value in data:
             if counter < self.__pagination:
                 counter += 1
-                schedule_message += self._construct_string(value)
+                schedule_message += self._construct_string(value, regular_duration, target_station_one, target_station_two)
             else:
                 result_list.append(schedule_message)
-                schedule_message = self._construct_string(value)
+                schedule_message = self._construct_string(value, regular_duration, target_station_one, target_station_two)
                 counter = 1
         result_list.append(schedule_message)
         return result_list

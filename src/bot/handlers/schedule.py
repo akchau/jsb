@@ -67,9 +67,10 @@ async def schedule_view(update: Update, _: ContextTypes.DEFAULT_TYPE):
     :return:
     """
     departure_code, direction, arrived_code = await parse_data(update)
+    schedule: list[str] = await get_app_data().controller.get_schedule(departure_code, arrived_code)
     buttons = [
         [InlineKeyboardButton(text=MenuSections.arrived_station.back_to_title,
-                              callback_data=await create_data(ARRIVED_STATION,
+                              callback_data=await create_data(str(ARRIVED_STATION),
                                                               departure_code, direction)),
          InlineKeyboardButton(text=MenuSections.departure_station.back_to_title,
                               callback_data=str(DEPARTURE_STATION))],
@@ -78,5 +79,7 @@ async def schedule_view(update: Update, _: ContextTypes.DEFAULT_TYPE):
     ]
     keyboard = InlineKeyboardMarkup(buttons)
     await update.callback_query.answer()
-    await update.callback_query.edit_message_text('Расписание на ближайшее время', reply_markup=keyboard)
+    for time in schedule:
+        await update.effective_message.reply_text(time)
+    await update.effective_message.reply_text("Расписание:", reply_markup=keyboard)
     return SCHEDULE_VIEW
