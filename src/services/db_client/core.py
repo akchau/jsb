@@ -169,16 +169,16 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
             raise self._model_error(f"Ошибка при создании модели расписания. {str(e)}")
         [await self.collections.schedule.write_schedule(new_schedule) for new_schedule in new_schedules]
 
-    async def get_schedule(self, departure_station_code, arrived_station_code):
+    async def get_schedule(self, departure_station_code, arrived_station_code, direction: str):
         """
         Получение расписания.
         :param departure_station_code: Код станции отправления.
         :param arrived_station_code: Код станции прибытия.
         :return:
         """
-        departure_station = await self.__get_station(departure_station_code)
-        # departure_station = await self.collections.stations.get_station(code=departure_station_code)
-        arrived_station = await self.__get_station(departure_station_code)
+        departure_station = await self.collections.stations.get_station(departure_station_code, direction)
+        arrived_station = await self.collections.stations.get_station(arrived_station_code, direction,
+                                                                      exclude_direction=True)
         return (await self.collections.schedule.get_schedule(departure_station_code, arrived_station_code),
                 await self.__model_transformator.transform(departure_station, self._station_domain_model),
                 await self.__model_transformator.transform(arrived_station, self._station_domain_model))

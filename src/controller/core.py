@@ -122,9 +122,14 @@ class ScheduleController:
     async def get_edit_menu_values(self):
         return self._action_enum.DELETE, self._action_enum.MOVE
 
-    async def get_schedule(self, departure_station_code, arrived_station_code):
+    async def get_schedule(self, departure_station_code, arrived_station_code, direction):
         schedule, departure_station, arrived_station = await self._entity.get_schedule(departure_station_code,
-                                                                                       arrived_station_code)
-        return self._schedule_constructor.constructor(schedule.schedule,
-                                                      target_station_one=departure_station.title,
-                                                      target_station_two=arrived_station.title)
+                                                                                       arrived_station_code,
+                                                                                       direction)
+        return (
+            self._schedule_constructor.constructor(schedule.schedule,
+                                                   target_station_one=departure_station.title,
+                                                   target_station_two=arrived_station.title),
+            departure_station, arrived_station
+        )
+

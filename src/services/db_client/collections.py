@@ -100,8 +100,12 @@ class RegisteredStationsDbCollection(BaseDbCollection):
     """
     _collection_model = StationDocumentModel
 
-    async def get_station(self, code: str, direction: str) -> CollectionModel | None:
-        all_stations_in_direction = await self.get_all_registered_stations(direction)
+    async def get_station(self, code: str, direction: str, exclude_direction=False) -> CollectionModel | None:
+        if exclude_direction:
+            all_stations_in_direction = [station for station in await self.get_all_registered_stations()
+                                         if station.direction != direction]
+        else:
+            all_stations_in_direction = await self.get_all_registered_stations(direction)
         result = [station for station in all_stations_in_direction
                   if station.code == code]
         if len(result) == 0:

@@ -80,7 +80,11 @@ async def schedule_view(update: Update, _: ContextTypes.DEFAULT_TYPE):
     :return:
     """
     departure_code, direction, arrived_code = await parse_data(update)
-    schedule: list[str] = await get_app_data().controller.get_schedule(departure_code, arrived_code)
+    schedule, departure_station_db, arrived_station_db = await get_app_data().controller.get_schedule(
+        departure_code,
+        arrived_code,
+        direction
+    )
 
     if update.callback_query:
         await update.callback_query.message.delete()
@@ -99,5 +103,6 @@ async def schedule_view(update: Update, _: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.answer()
     for time in schedule:
         await update.effective_message.reply_text(time)
-    await update.effective_message.reply_text(f"Расписание", reply_markup=keyboard)
+    await update.effective_message.reply_text(f"Расписание {departure_station_db.title} - "
+                                              f"{arrived_station_db.title}", reply_markup=keyboard)
     return SCHEDULE_VIEW
