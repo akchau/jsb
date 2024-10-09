@@ -101,22 +101,20 @@ class RegisteredStationsDbCollection(BaseDbCollection):
     _collection_model = StationDocumentModel
 
     async def get_station(self, code: str, direction: str, exclude_direction=False) -> CollectionModel | None:
-        if exclude_direction:
-            all_stations_in_direction = [station for station in await self.get_all_registered_stations()
-                                         if station.direction != direction]
-        else:
-            all_stations_in_direction = await self.get_all_registered_stations(direction)
+        all_stations_in_direction = await self.get_all_registered_stations(direction, exclude_direction)
         result = [station for station in all_stations_in_direction
                   if station.code == code]
         if len(result) == 0:
             return None
         return result[0]
 
-    async def get_all_registered_stations(self, direction: str = None) -> list[CollectionModel]:
+    async def get_all_registered_stations(self, direction: str = None,
+                                          exclude_direction=False) -> list[CollectionModel]:
         """
         Получить все зарегестрированные станции.
-        :param direction: Направление, в котором ищутся зарегестрированные станции.
-        :return: Список станций, зарегистрированных в данном направлении.
+        :param direction Направление, в котором ищутся зарегестрированные станции.
+        :param exclude_direction Исключить направление.
+        :return Список станций, зарегистрированных в данном направлении.
         """
         try:
             all_stations: list[CollectionModel] = self._transport.get_list(collection_name=self._collection_name,
@@ -125,9 +123,12 @@ class RegisteredStationsDbCollection(BaseDbCollection):
             raise self._transport_error(str(e))
 
         # При необходимости есть фильтрация по direction
-        if direction is not None:
+        if direction is not None and exclude_direction:
+            return [station for station in all_stations if station.direction != direction]
+        elif direction is not None and not exclude_direction:
             return [station for station in all_stations if station.direction == direction]
-        return all_stations
+        else:
+            return all_stations
 
     async def register_station(self, new_station: CollectionModel) -> CollectionModel:
         """
@@ -136,7 +137,8 @@ class RegisteredStationsDbCollection(BaseDbCollection):
         :return: Данные станции.
         """
         try:
-            this_station: CollectionModel | None = await self.get_station(new_station.code, new_station.direction)
+            this_station: CollectionModel | None = await self.get_station(new_station.code,
+                                                                          new_station.direction)
             if this_station is None:
                 self._transport.post(self._collection_name, new_station.create_document())
                 created_station = await self.get_station(new_station.code, new_station.direction)
@@ -169,7 +171,7 @@ class RegisteredStationsDbCollection(BaseDbCollection):
         except BaseMongoTransportException as e:
             raise self._transport_error(str(e))
 
-    async def move_station(self, code: str, direction: str, new_direction: str) -> CollectionModel:
+    async def move_station(self, code: str, direction: str, new_direction) -> CollectionModel:
         """
         Переместить станцию.
         :param code: Код станци.
@@ -178,21 +180,19 @@ class RegisteredStationsDbCollection(BaseDbCollection):
         """
         try:
             station = await self.get_station(code, direction)
+            another_direction_station = await self.get_station(code, direction, exclude_direction=True)
+            if another_direction_station:
+                return another_direction_station
             if station:
-                # TODO Надо оттестить этот момент
-                this_station = await self.get_station(code, new_direction)
-                if this_station is None:
-                    self._transport.update_field(
-                        collection_name=self._collection_name,
-                        field_name="direction",
-                        new_value=new_direction,
-                        instance_id=station.id)
-                    updated_station = await self.get_station(code, new_direction)
-                    if updated_station is None:
-                        raise InternalDbError("Поле не обновилось")
-                    return updated_station
-                else:
-                    raise self._exist_exception
+                self._transport.update_field(
+                    collection_name=self._collection_name,
+                    field_name="direction",
+                    new_value=direction,
+                    instance_id=station.id)
+                updated_station = await self.get_station(code, new_direction)
+                if updated_station is None:
+                    raise InternalDbError("Поле не обновилось")
+                return updated_station
             else:
                 raise self._not_exist_exception
         except BaseMongoTransportException as e:

@@ -31,21 +31,6 @@ class ScheduleController:
     async def change_station_callback(self, actual_condition):
         pass
 
-    async def __get_registered_stations(self, direction: str = None,
-                                        exclude_direction:bool = False) -> list[Station]:
-        """
-        Список станций зарегестированных в данном направлении.
-        """
-        clean_direction = self._direction_validator(direction=direction).direction \
-            if direction is not None else None
-        if direction is not None and exclude_direction:
-            clean_direction = self._station_direction.FROM_MOSCOW \
-                if clean_direction == self._station_direction.TO_MOSCOW else self._station_direction.TO_MOSCOW
-        try:
-            return await self._entity.get_all_registered_stations(clean_direction)
-        except self._db_client_error:
-            raise self._internal_error
-
     async def station_action(self, action: str, direction: str, code: str) -> None:
         actual_stations_list = None
         clean_direction: StationsDirection = self._direction_validator(direction=direction).get_direction()
@@ -65,7 +50,8 @@ class ScheduleController:
                         for available_station in all_stations:
                             if available_station.code == code:
                                 actual_stations_list = await self._entity.register_station(available_station)
-                                for another_direction_station in await self.__get_registered_stations(direction, True):
+                                for another_direction_station in await self._entity.get_all_registered_stations(
+                                        direction, True):
                                     direct_schedule, back_schedule = await self._api.get_schedule(another_direction_station.code, code)
                                     schedules = [
                                         Schedule(schedule=direct_schedule,
@@ -93,8 +79,12 @@ class ScheduleController:
         except self._db_client_error as e:
             raise self._internal_error(str(e))
 
-    async def get_stations(self, direction: str | None = None,
-                           for_registration: bool = False, exclude_direction: bool = False) -> list[Station]:
+    async def get_stations_for_schedule(self, direction=None, exclude_direction: bool = False):
+        if direction:
+            return await self._entity.get_all_registered_stations(direction, exclude_direction=exclude_direction)
+        return await self._entity.get_all_registered_stations(direction)
+
+    async def get_stations_for_admin(self, direction: str, for_registration: bool = False) -> list[Station]:
         if for_registration and direction:
 
             try:
@@ -106,21 +96,22 @@ class ScheduleController:
                                                 direction=self._direction_validator(
                                                     direction=direction).get_direction())
                             for stop in list_stops_from_api]
-            already_registered_stations: list[Station] = await self.__get_registered_stations(direction)
-            return ([station for station in all_stations if station not in already_registered_stations],
-                    StationActionEnum.REGISTER, self._direction_validator(direction=direction).get_text_direction())
-
-        elif direction is None:
-            return await self.__get_registered_stations()
-        elif direction and exclude_direction is True:
-            return await self.__get_registered_stations(direction, exclude_direction)
-        return await self.__get_registered_stations(direction), self._direction_validator(direction=direction).get_text_direction()
+            already_registered_stations: list[Station] = await self._entity.get_all_registered_stations(direction)
+            return [station for station in all_stations if station not in already_registered_stations]
+        else:
+            return await self._entity.get_all_registered_stations(direction)
 
     async def get_directions(self):
         return self._station_direction
 
+    async def get_text_direction(self, direction):
+        return self._direction_validator(direction=direction).get_text_direction()
+
     async def get_edit_menu_values(self):
         return self._action_enum.DELETE, self._action_enum.MOVE
+
+    async def get_register_action(self):
+        return self._action_enum.REGISTER
 
     async def get_schedule(self, departure_station_code, arrived_station_code, direction):
         schedule, departure_station, arrived_station = await self._entity.get_schedule(departure_station_code,

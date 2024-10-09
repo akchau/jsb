@@ -10,7 +10,7 @@ from src.bot.handlers.data_handler import parse_data, create_data
 from src.init_app import get_app_data
 
 
-async def departure_station(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
+async def departure_station(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """
     Обработчик меню станции отправления.
     :param update:
@@ -21,25 +21,38 @@ async def departure_station(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int
 
     if data:
         arrived_code, direction = data
-        stations, _ = await get_app_data().controller.get_stations(direction=direction)
+        stations = await get_app_data().controller.get_stations_for_schedule(direction=direction)
         station_buttons = [[InlineKeyboardButton(text=station.title,
                                                  callback_data=await create_data(
                                                     SCHEDULE_VIEW,
                                                     station.code, station.direction, arrived_code))]
                            for station in stations]
+
+        chat_id = update.effective_chat.id
+        current_message_id = update.effective_message.message_id
+        # TODO оставить сообщение start
+        for message_id in range(current_message_id - 1, current_message_id - 10, -1):
+            try:
+                await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
+            except Exception as e:
+                continue
+
     else:
-        stations = await get_app_data().controller.get_stations()
+        stations = await get_app_data().controller.get_stations_for_schedule()
         station_buttons = [[InlineKeyboardButton(text=station.title,
                                                  callback_data=await create_data(
                                                      ARRIVED_STATION,
                                                      station.code, station.direction))]
                            for station in stations]
+        # if update.callback_query:
+        #     await update.callback_query.message.delete()
     buttons = [
         *station_buttons,
         [InlineKeyboardButton(text=MenuSections.main_menu.back_to_title, callback_data=str(MAIN_MENU))]
     ]
     keyboard = InlineKeyboardMarkup(buttons)
     await update.callback_query.answer()
+    # await update.effective_message.reply_text(MenuSections.departure_station.title, reply_markup=keyboard)
     await update.callback_query.edit_message_text(MenuSections.departure_station.title, reply_markup=keyboard)
     return DEPARTURE_STATION
 
@@ -53,7 +66,7 @@ async def arrived_station(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
     """
 
     code, direction = await parse_data(update)
-    stations = await get_app_data().controller.get_stations(direction, exclude_direction=True)
+    stations = await get_app_data().controller.get_stations_for_schedule(direction, exclude_direction=True)
     buttons = [
         *[[InlineKeyboardButton(
             text=station.title,

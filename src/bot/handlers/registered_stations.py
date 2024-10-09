@@ -53,9 +53,8 @@ async def registered_stations_with_direction(update: Update, _: ContextTypes.DEF
         await get_app_data().controller.station_action(direction=direction, code=code, action=action)
     else:
         direction = parsed_data
-    print(direction)
-    stations, text_direction = await get_app_data().controller.get_stations(direction=direction)
-    print(stations, text_direction)
+    stations = await get_app_data().controller.get_stations_for_admin(direction=direction)
+    text_direction = await get_app_data().controller.get_text_direction(direction)
     buttons = [
         *[
             [
@@ -79,7 +78,6 @@ async def registered_stations_with_direction(update: Update, _: ContextTypes.DEF
     ]
     keyboard = InlineKeyboardMarkup(buttons)
     await update.callback_query.answer()
-    print(keyboard, text_direction)
     await update.callback_query.edit_message_text(
         text=f"{MenuSections.my_stations.title}\nНаправление: {text_direction}",
         reply_markup=keyboard)

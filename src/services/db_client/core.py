@@ -60,7 +60,6 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
             raise ModelError("При пробросе данных авторизации произошла ошибка парсинга! Данные авторизации невалидны")
 
     def __init__(self, station_domain_model: Type[BaseModel], client_data: DbClientAuthModel):
-
         transport = MongoDbTransport(**client_data.dict())
         @dataclass
         class Collections:
@@ -129,33 +128,17 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         await self.collections.stations.register_station(new_station)
         return await self.get_all_registered_stations()
 
-    async def get_all_registered_stations(self, direction=None) -> list[DomainStationObject]:
+    async def get_all_registered_stations(self, direction=None, exclude_direction: bool = False) -> list[DomainStationObject]:
         """
         Получение списка зарегистрированных станций.
-        :param direction:
+        :param direction Направление.
+        :param exclude_direction Исключить направление.
         :return:
         """
         return [
             await self.__model_transformator.transform(station, self._station_domain_model)
-            for station in await self.collections.stations.get_all_registered_stations(direction)
+            for station in await self.collections.stations.get_all_registered_stations(direction, exclude_direction)
         ]
-
-    async def __get_station(self, code: str) -> DomainStationObject:
-        """
-        Получение списка зарегистрированных станций.
-        :param direction:
-        :return:
-        """
-
-        stations = [
-            await self.__model_transformator.transform(station, self._station_domain_model)
-            for station in await self.collections.stations.get_all_registered_stations()
-        ]
-        station = None
-        for station_model in stations:
-            if station_model.code == code:
-                station = station_model
-        return station
 
     async def write_schedules(self, new_objects: list[DomainScheduleObject]) -> None:
         """
@@ -163,22 +146,27 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         :param new_object: Новое расписание.
         :return: None
         """
-        try:
-            new_schedules = [ScheduleDocumentModel(**new_object.dict()) for new_object in new_objects]
-        except ValidationError as e:
-            raise self._model_error(f"Ошибка при создании модели расписания. {str(e)}")
-        [await self.collections.schedule.write_schedule(new_schedule) for new_schedule in new_schedules]
+        new_schedules = [
+            self.__model_transformator.transform(new_object, ScheduleDocumentModel)
+            for new_object in new_objects
+        ]
+        [
+            await self.collections.schedule.write_schedule(new_schedule)
+            for new_schedule in new_schedules
+        ]
 
-    async def get_schedule(self, departure_station_code, arrived_station_code, direction: str):
+    async def get_schedule(self, departure_station_code: str, arrived_station_code: str, direction: str):
         """
         Получение расписания.
-        :param departure_station_code: Код станции отправления.
-        :param arrived_station_code: Код станции прибытия.
+        :param departure_station_code Код станции отправления.
+        :param arrived_station_code Код станции прибытия.
+        :param direction Направление станции отправления.
         :return:
         """
         departure_station = await self.collections.stations.get_station(departure_station_code, direction)
         arrived_station = await self.collections.stations.get_station(arrived_station_code, direction,
                                                                       exclude_direction=True)
+        print(departure_station, arrived_station)
         return (await self.collections.schedule.get_schedule(departure_station_code, arrived_station_code),
                 await self.__model_transformator.transform(departure_station, self._station_domain_model),
                 await self.__model_transformator.transform(arrived_station, self._station_domain_model))
