@@ -3,43 +3,72 @@
 """
 import asyncio
 from dataclasses import dataclass
-from typing import Type, TypeVar, Generic
+from typing import TypeVar, Generic, Type
 
 from mongo_db_client import MongoDbTransport
-from pydantic import ValidationError
+from pydantic import ValidationError, BaseModel
 
 from src.services.db_client.collections import ScheduleDbCollection, RegisteredStationsDbCollection
 from src.services.db_client.db_client_types import DbClientAuthModel, ScheduleDocumentModel, StationDocumentModel
 from src.services.db_client.exc import ModelError
 
 
-@dataclass
-class Collections:
-    """
-    Коллекции которые используются.
-    """
-    schedule: ScheduleDbCollection
-    stations: RegisteredStationsDbCollection
-
-
 DomainStationObject = TypeVar("DomainStationObject")
 DomainScheduleObject = TypeVar("DomainScheduleObject")
+
+TransformedModel = TypeVar("TransformedModel")
+
+
+#TODO Класс преобразователь
+class ModelTransformator(Generic[TransformedModel]):
+    """
+    Трансформатор моделей
+    """
+
+    def __init__(self, model_error: Exception):
+        self.model_error = model_error
+
+    async def transform(self, model: BaseModel, target_model: Type[TransformedModel]) -> TransformedModel:
+        """
+        Преобразование одной модели в другую.
+        :param model:
+        :param target_model:
+        :return:
+        """
+        try:
+            return target_model(**model.dict())
+        except ValidationError:
+            raise
 
 
 class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
     """
     Взаимодействие контроллера с БД через коллекции.
+
+    - Реализует интерфейс для контроллера для работы с базой данных.
+    - С помощью ModelTransformator преобразует модели БД в доменные модели.
     """
 
-    _auth_model = DbClientAuthModel
+    _auth_model: BaseModel = DbClientAuthModel
+    _model_error: Exception = ModelError
 
     @classmethod
-    def construct(cls, station_domain_model, **kwargs):
-        return cls(client_data=cls._auth_model(**kwargs), station_domain_model=station_domain_model)
+    def construct(cls, station_domain_model: Type[BaseModel], **kwargs):
+        try:
+            return cls(client_data=cls._auth_model(**kwargs), station_domain_model=station_domain_model)
+        except ValidationError:
+            raise ModelError("При пробросе данных авторизации произошла ошибка парсинга! Данные авторизации невалидны")
 
-    #TODO передавать лучше строкой и вернуть проверку
-    def __init__(self, station_domain_model, client_data: DbClientAuthModel):
+    def __init__(self, station_domain_model: Type[BaseModel], client_data: DbClientAuthModel):
+
         transport = MongoDbTransport(**client_data.dict())
+        @dataclass
+        class Collections:
+            """
+            Коллекции которые используются.
+            """
+            schedule: ScheduleDbCollection
+            stations: RegisteredStationsDbCollection
 
         self.collections = Collections(
             schedule=ScheduleDbCollection(
@@ -52,13 +81,13 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
             )
         )
         self._station_domain_model = station_domain_model
-        self._model_error = ModelError
+        self.__model_transformator = ModelTransformator(self._model_error)
         self.__on_station_change = None
 
     async def __delete_related_schedule(self, station: StationDocumentModel) -> None:
         """
         Удаление связанных станций.
-        :param station: Станция.
+        :param station: Станция которую удаляем.
         :return:
         """
         schedules = [schedule for schedule in self.collections.schedule.get_all_schedules()
@@ -76,7 +105,6 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         await self.__delete_related_schedule(station)
         return await self.get_all_registered_stations()
 
-
     async def move_station(self, code, direction, new_direction) -> list[DomainStationObject]:
         """
         Перемещение станции.
@@ -88,18 +116,16 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         await self.__delete_related_schedule(station)
         return await self.get_all_registered_stations()
 
-    async def register_station(self,
-                               station: DomainStationObject
-                               ) -> list[DomainStationObject]:
+    async def register_station(self, station: DomainStationObject) -> list[DomainStationObject]:
         """
         Регистрация станции.
         :param station: Новая станция.
         :return:
         """
-        try:
-            new_station = StationDocumentModel(**station.dict())
-        except ValidationError as e:
-            raise self._model_error(f"Ошибка при создании модели станци. {e}")
+        # TODO регистрация происходит наоборот
+
+        new_station: StationDocumentModel = await self.__model_transformator.transform(station,
+                                                                                       StationDocumentModel)
         await self.collections.stations.register_station(new_station)
         return await self.get_all_registered_stations()
 
@@ -109,32 +135,50 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         :param direction:
         :return:
         """
+        return [
+            await self.__model_transformator.transform(station, self._station_domain_model)
+            for station in await self.collections.stations.get_all_registered_stations(direction)
+        ]
 
-        try:
-            return [
-                self._station_domain_model(**station.dict())
-                for station in await self.collections.stations.get_all_registered_stations(direction)
-            ]
-        except ValidationError:
-            raise self._model_error("Данные получены в неверном формате")
+    async def __get_station(self, code: str) -> DomainStationObject:
+        """
+        Получение списка зарегистрированных станций.
+        :param direction:
+        :return:
+        """
 
-    async def write_schedule(self, new_object: DomainScheduleObject) -> None:
+        stations = [
+            await self.__model_transformator.transform(station, self._station_domain_model)
+            for station in await self.collections.stations.get_all_registered_stations()
+        ]
+        station = None
+        for station_model in stations:
+            if station_model.code == code:
+                station = station_model
+        return station
+
+    async def write_schedules(self, new_objects: list[DomainScheduleObject]) -> None:
         """
         Запись расписания.
         :param new_object: Новое расписание.
         :return: None
         """
         try:
-            new_schedule = ScheduleDocumentModel(**new_object.dict())
+            new_schedules = [ScheduleDocumentModel(**new_object.dict()) for new_object in new_objects]
         except ValidationError as e:
             raise self._model_error(f"Ошибка при создании модели расписания. {str(e)}")
-        await self.collections.schedule.write_schedule(new_schedule)
+        [await self.collections.schedule.write_schedule(new_schedule) for new_schedule in new_schedules]
 
-    async def get_schedule(self, departure_station_code, arrived_station_code) -> ScheduleDocumentModel:
+    async def get_schedule(self, departure_station_code, arrived_station_code):
         """
         Получение расписания.
         :param departure_station_code: Код станции отправления.
         :param arrived_station_code: Код станции прибытия.
         :return:
         """
-        return await self.collections.schedule.get_schedule(departure_station_code, arrived_station_code)
+        departure_station = await self.__get_station(departure_station_code)
+        # departure_station = await self.collections.stations.get_station(code=departure_station_code)
+        arrived_station = await self.__get_station(departure_station_code)
+        return (await self.collections.schedule.get_schedule(departure_station_code, arrived_station_code),
+                await self.__model_transformator.transform(departure_station, self._station_domain_model),
+                await self.__model_transformator.transform(arrived_station, self._station_domain_model))

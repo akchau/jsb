@@ -1,6 +1,8 @@
 """
 Главный модуль контроллера.
 """
+from datetime import datetime
+
 from .controller_types import StationActionEnum, StationsDirection, Station, DirectionType, Schedule
 from .exc import InternalError
 
@@ -63,6 +65,18 @@ class ScheduleController:
                         for available_station in all_stations:
                             if available_station.code == code:
                                 actual_stations_list = await self._entity.register_station(available_station)
+                                for another_direction_station in await self.__get_registered_stations(direction, True):
+                                    direct_schedule, back_schedule = await self._api.get_schedule(another_direction_station.code, code)
+                                    schedules = [
+                                        Schedule(schedule=direct_schedule,
+                                                 arrived_station_code=another_direction_station.code,
+                                                 departure_station_code=code,
+                                                 update_time=datetime.now()),
+                                        Schedule(schedule=back_schedule,
+                                                 arrived_station_code=code,
+                                                 departure_station_code=another_direction_station.code,
+                                                 update_time=datetime.now())]
+                                    await self._entity.write_schedules(schedules)
                     except ExistException:
                         pass
                     except self._api_error as e:
@@ -95,6 +109,7 @@ class ScheduleController:
             already_registered_stations: list[Station] = await self.__get_registered_stations(direction)
             return ([station for station in all_stations if station not in already_registered_stations],
                     StationActionEnum.REGISTER, self._direction_validator(direction=direction).get_text_direction())
+
         elif direction is None:
             return await self.__get_registered_stations()
         elif direction and exclude_direction is True:
@@ -108,11 +123,8 @@ class ScheduleController:
         return self._action_enum.DELETE, self._action_enum.MOVE
 
     async def get_schedule(self, departure_station_code, arrived_station_code):
-        stations = await self._entity.get_all_registered_stations()
-        schedule = await self._api.get_schedule(departure_station_code, arrived_station_code)
-        # await self._entity.write_schedule(schedule)
-        return self._schedule_constructor.constructor(schedule.ext(),
-                                                      target_station_one=[station.title for station in stations
-                                                                          if station.code == departure_station_code][0],
-                                                      target_station_two=[station.title for station in stations
-                                                                          if station.code == arrived_station_code][0])
+        schedule, departure_station, arrived_station = await self._entity.get_schedule(departure_station_code,
+                                                                                       arrived_station_code)
+        return self._schedule_constructor.constructor(schedule.schedule,
+                                                      target_station_one=departure_station.title,
+                                                      target_station_two=arrived_station.title)

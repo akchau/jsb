@@ -57,11 +57,12 @@ class DataConstructor:
         fulling = self._clean_fulling(title, target_station_one=target_station_one, target_station_two=target_station_two,
                                       speed=bold_flag)
         schedule_message = None
-        if datetime.datetime.now().time().hour < int(clean_departure_time.split(":")[0]):
-            if bold_flag:
-                schedule_message = f"\n<b>{train_type} {time} ({int(duration)}мин. {fulling}) ~{platform}.</b>"
-            else:
-                schedule_message = f"\n{train_type} {time} ({int(duration)}мин. {fulling}) ~{platform}"
+        # TODO оно вечером ничего не отдает
+        # if datetime.datetime.now().time().hour < int(clean_departure_time.split(":")[0]):
+        if bold_flag:
+            schedule_message = f"\n<b>{train_type} {time} ({int(duration)}мин. {fulling}) ~{platform}.</b>"
+        else:
+            schedule_message = f"\n{train_type} {time} ({int(duration)}мин. {fulling}) ~{platform}"
         return schedule_message if schedule_message is not None else ""
 
     def constructor(self, data: list[tuple], target_station_one, target_station_two) -> list:

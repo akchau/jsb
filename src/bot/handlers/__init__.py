@@ -79,7 +79,8 @@ main_conv_handler = ConversationHandler(
             # СТАНЦИЯ ОТПРАВЛЕНИЯ
             DEPARTURE_STATION: [
                 CallbackQueryHandler(main_menu, pattern="^" + str(MAIN_MENU) + "$"),
-                CallbackQueryHandler(arrived_station, pattern="^" + str(ARRIVED_STATION))
+                CallbackQueryHandler(arrived_station, pattern="^" + str(ARRIVED_STATION)),
+                CallbackQueryHandler(schedule_view, pattern="^" + str(SCHEDULE_VIEW))
             ],
             # ВЫБОР ДЕЙСТВИЯ СО СТАНЦИЕЙ
             EDIT_STATION: [

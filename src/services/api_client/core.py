@@ -74,7 +74,9 @@ class ApiInteractor:
 
     async def get_schedule(self, departure_station_code, arrived_station_code):
         try:
-            return await self.__api_client.get_schedule(departure_station_code, arrived_station_code)
+            direct = await self.__api_client.get_schedule(departure_station_code, arrived_station_code)
+            back = await self.__api_client.get_schedule(arrived_station_code, departure_station_code)
+            return direct.ext(), back.ext()
         except RequestException as e:
             raise self._internal_api_error(str(e))
         except ValidationError as e:

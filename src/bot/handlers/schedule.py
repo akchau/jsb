@@ -17,12 +17,25 @@ async def departure_station(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int
     :param _:
     :return:
     """
-    stations = await get_app_data().controller.get_stations()
+    data = await parse_data(update)
+
+    if data:
+        arrived_code, direction = data
+        stations, _ = await get_app_data().controller.get_stations(direction=direction)
+        station_buttons = [[InlineKeyboardButton(text=station.title,
+                                                 callback_data=await create_data(
+                                                    SCHEDULE_VIEW,
+                                                    station.code, station.direction, arrived_code))]
+                           for station in stations]
+    else:
+        stations = await get_app_data().controller.get_stations()
+        station_buttons = [[InlineKeyboardButton(text=station.title,
+                                                 callback_data=await create_data(
+                                                     ARRIVED_STATION,
+                                                     station.code, station.direction))]
+                           for station in stations]
     buttons = [
-        *[[InlineKeyboardButton(text=station.title,
-                                callback_data=await create_data(ARRIVED_STATION,
-                                                                station.code, station.direction))]
-          for station in stations],
+        *station_buttons,
         [InlineKeyboardButton(text=MenuSections.main_menu.back_to_title, callback_data=str(MAIN_MENU))]
     ]
     keyboard = InlineKeyboardMarkup(buttons)
@@ -68,12 +81,17 @@ async def schedule_view(update: Update, _: ContextTypes.DEFAULT_TYPE):
     """
     departure_code, direction, arrived_code = await parse_data(update)
     schedule: list[str] = await get_app_data().controller.get_schedule(departure_code, arrived_code)
+
+    if update.callback_query:
+        await update.callback_query.message.delete()
+
     buttons = [
         [InlineKeyboardButton(text=MenuSections.arrived_station.back_to_title,
                               callback_data=await create_data(str(ARRIVED_STATION),
                                                               departure_code, direction)),
          InlineKeyboardButton(text=MenuSections.departure_station.back_to_title,
-                              callback_data=str(DEPARTURE_STATION))],
+                              callback_data=await create_data(str(DEPARTURE_STATION),
+                                                              arrived_code, direction))],
         [InlineKeyboardButton(text=MenuSections.main_menu.back_to_title,
                               callback_data=str(MAIN_MENU))]
     ]
@@ -81,5 +99,5 @@ async def schedule_view(update: Update, _: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.answer()
     for time in schedule:
         await update.effective_message.reply_text(time)
-    await update.effective_message.reply_text("Расписание:", reply_markup=keyboard)
+    await update.effective_message.reply_text(f"Расписание", reply_markup=keyboard)
     return SCHEDULE_VIEW

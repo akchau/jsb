@@ -100,7 +100,7 @@ class RegisteredStationsDbCollection(BaseDbCollection):
     """
     _collection_model = StationDocumentModel
 
-    async def __get_station(self, code: str, direction: str) -> CollectionModel | None:
+    async def get_station(self, code: str, direction: str) -> CollectionModel | None:
         all_stations_in_direction = await self.get_all_registered_stations(direction)
         result = [station for station in all_stations_in_direction
                   if station.code == code]
@@ -132,10 +132,10 @@ class RegisteredStationsDbCollection(BaseDbCollection):
         :return: Данные станции.
         """
         try:
-            this_station: CollectionModel | None = await self.__get_station(new_station.code, new_station.direction)
+            this_station: CollectionModel | None = await self.get_station(new_station.code, new_station.direction)
             if this_station is None:
                 self._transport.post(self._collection_name, new_station.create_document())
-                created_station = await self.__get_station(new_station.code, new_station.direction)
+                created_station = await self.get_station(new_station.code, new_station.direction)
                 if created_station is None:
                     raise InternalDbError("Станция не зарегистриоовалась!")
                 return created_station
@@ -152,11 +152,11 @@ class RegisteredStationsDbCollection(BaseDbCollection):
         :return: Данные станции.
         """
         try:
-            station = await self.__get_station(code, direction)
+            station = await self.get_station(code, direction)
             if station:
                 self._transport.delete(collection_name=self._collection_name,
                                        instance_id=station.id)
-                deleted_station = await self.__get_station(code, direction)
+                deleted_station = await self.get_station(code, direction)
                 if deleted_station:
                     raise InternalDbError("Станция не удалилась")
                 return station
@@ -173,17 +173,17 @@ class RegisteredStationsDbCollection(BaseDbCollection):
         :return: Обновленные данные станции.
         """
         try:
-            station = await self.__get_station(code, direction)
+            station = await self.get_station(code, direction)
             if station:
                 # TODO Надо оттестить этот момент
-                this_station = await self.__get_station(code, new_direction)
+                this_station = await self.get_station(code, new_direction)
                 if this_station is None:
                     self._transport.update_field(
                         collection_name=self._collection_name,
                         field_name="direction",
                         new_value=new_direction,
                         instance_id=station.id)
-                    updated_station = await self.__get_station(code, new_direction)
+                    updated_station = await self.get_station(code, new_direction)
                     if updated_station is None:
                         raise InternalDbError("Поле не обновилось")
                     return updated_station
