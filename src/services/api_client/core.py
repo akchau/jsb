@@ -66,9 +66,16 @@ class ApiInteractor:
     """
     def __init__(self, base_url: str, api_key: str, base_station_code: str):
         self._store_type = StoreType
-        self.__api_client = TransportApiClient(base_url=base_url, api_prefix="v3.0", store=self._store_type(
-            api_key=api_key, base_station_code=base_station_code
-        ))
+        self.__api_client = TransportApiClient(
+            base_url=base_url,
+            api_prefix="v3.0",
+            store=self._store_type(
+                api_key=api_key,
+                base_station_code=base_station_code
+            ),
+            time_sleep=1,
+            iterations=3
+        )
         self._internal_api_error = InternalApiError
         self._parsing_api_error = ParsingApiResponseError
 
@@ -87,11 +94,9 @@ class ApiInteractor:
         Получение списка станций или станции по коду.
         """
         try:
-
             branch = await self.__api_client.get_branch_info()
             thread = await self.__api_client.get_thread_info(branch.get_thread_uid())
             return thread.ext_get_stations()
-        # TODO тут иногда при плохом соединений слетает, нужен презапуск встроенный или внешний
         except RequestException as e:
             raise self._internal_api_error(str(e))
         except ValidationError as e:

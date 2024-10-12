@@ -19,7 +19,6 @@ DomainScheduleObject = TypeVar("DomainScheduleObject")
 TransformedModel = TypeVar("TransformedModel")
 
 
-#TODO Класс преобразователь
 class ModelTransformator(Generic[TransformedModel]):
     """
     Трансформатор моделей
@@ -128,7 +127,8 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         await self.collections.stations.register_station(new_station)
         return await self.get_all_registered_stations()
 
-    async def get_all_registered_stations(self, direction=None, exclude_direction: bool = False) -> list[DomainStationObject]:
+    async def get_all_registered_stations(self, direction=None,
+                                          exclude_direction: bool = False) -> list[DomainStationObject]:
         """
         Получение списка зарегистрированных станций.
         :param direction Направление.
@@ -147,7 +147,7 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         :return: None
         """
         new_schedules = [
-            self.__model_transformator.transform(new_object, ScheduleDocumentModel)
+            await self.__model_transformator.transform(new_object, ScheduleDocumentModel)
             for new_object in new_objects
         ]
         [
@@ -155,7 +155,9 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
             for new_schedule in new_schedules
         ]
 
-    async def get_schedule(self, departure_station_code: str, arrived_station_code: str, direction: str):
+    async def get_schedule(self, departure_station_code: str,
+                           arrived_station_code: str,
+                           direction: str) -> tuple[str, DomainStationObject, DomainStationObject]:
         """
         Получение расписания.
         :param departure_station_code Код станции отправления.
@@ -163,10 +165,11 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         :param direction Направление станции отправления.
         :return:
         """
-        departure_station = await self.collections.stations.get_station(departure_station_code, direction)
-        arrived_station = await self.collections.stations.get_station(arrived_station_code, direction,
-                                                                      exclude_direction=True)
-        print(departure_station, arrived_station)
-        return (await self.collections.schedule.get_schedule(departure_station_code, arrived_station_code),
+        departure_station: StationDocumentModel = await self.collections.stations.get_station(departure_station_code,
+                                                                                              direction)
+        arrived_station: StationDocumentModel = await self.collections.stations.get_station(
+            arrived_station_code, direction, exclude_direction=True)
+        schedule = await self.collections.schedule.get_schedule(departure_station_code, arrived_station_code)
+        return (schedule,
                 await self.__model_transformator.transform(departure_station, self._station_domain_model),
                 await self.__model_transformator.transform(arrived_station, self._station_domain_model))

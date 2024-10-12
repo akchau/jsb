@@ -1,6 +1,8 @@
 """
 Модуль с обработчиками регистрации станций
 """
+import logging
+
 from telegram import InlineKeyboardButton, Update, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
@@ -10,10 +12,15 @@ from src.bot.handlers.data_handler import parse_data, create_data
 from src.init_app import get_app_data
 
 
+logger = logging.getLogger(__name__)
+
+
 async def register_station(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
     """
     Регистрация станции.
     """
+    user = update.message.from_user if update.message else update.callback_query.from_user
+    logger.debug(f"ID={user.id} выбирает направление для регистрации станций")
     directions = await get_app_data().controller.get_directions()
     buttons = [
         [
@@ -43,13 +50,15 @@ async def register_station_with_direction(update: Update, _: ContextTypes.DEFAUL
     """
 
     direction = await parse_data(update)
+    user = update.message.from_user if update.message else update.callback_query.from_user
+    logger.debug(f"ID={user.id} регистрирует станцию в направлении: {direction}. Бот получает доступные для регистрации станции по api -> ")
     stations = await get_app_data().controller.get_stations_for_admin(direction, for_registration=True)
-    action = await get_app_data().controller.get_register_action()
+    logger.debug(f"По api успешно получен список из {len(stations)} станций не зарегистированных в этом направлении")
     text_direction = await get_app_data().controller.get_text_direction(direction)
     buttons = [
         *[[InlineKeyboardButton(text=station.title,
                                 callback_data=(await create_data(REGISTERED_STATIONS_WITH_DIRECTION,
-                                                                 direction, action,
+                                                                 direction, await get_app_data().controller.get_register_action(),
                                                                  station.code)))]
           for station in stations],
         [

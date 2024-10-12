@@ -1,13 +1,18 @@
 """
 Главный модуль контроллера.
 """
+import logging
 from datetime import datetime
+from typing import Type
 
 from .controller_types import StationActionEnum, StationsDirection, Station, DirectionType, Schedule
 from .exc import InternalError
 
 from src.services import ApiInteractor, ScheduleEntity, ExistException, ApiError, DbClientException
 from .send_schedule import DataConstructor
+
+
+logger = logging.getLogger(__name__)
 
 
 class ScheduleController:
@@ -28,7 +33,13 @@ class ScheduleController:
         self._action_enum = StationActionEnum
         self._schedule_constructor = DataConstructor(pagination)
 
-    async def change_station_callback(self, actual_condition):
+    async def change_station_callback(self, actual_condition: tuple[list[Station], list[Station]]):
+        """
+        Колбек который вызвывается при изменении состава станций.
+        :param actual_condition:
+        :return:
+        """
+
         pass
 
     async def station_action(self, action: str, direction: str, code: str) -> None:
@@ -68,12 +79,17 @@ class ScheduleController:
                     except self._api_error as e:
                         raise self._internal_error(str(e))
             if actual_stations_list:
-                registered_stations_from_moscow = [station for station in actual_stations_list
-                                                   if station.direction == self._station_direction.FROM_MOSCOW]
-                registered_stations_to_moscow = [station for station in actual_stations_list
-                                                 if station.direction == self._station_direction.TO_MOSCOW]
-
-                await self.change_station_callback((registered_stations_from_moscow, registered_stations_to_moscow))
+                registered_stations_from_moscow: list[Station] = [
+                    station for station in actual_stations_list
+                    if station.direction == self._station_direction.FROM_MOSCOW
+                ]
+                registered_stations_to_moscow: list[Station] = [
+                    station for station in actual_stations_list
+                    if station.direction == self._station_direction.TO_MOSCOW
+                ]
+                await self.change_station_callback(
+                    (registered_stations_from_moscow, registered_stations_to_moscow)
+                )
             else:
                 raise self._internal_error("Действие не вернуло актуальное сосотояние.")
         except self._db_client_error as e:
@@ -85,13 +101,12 @@ class ScheduleController:
         return await self._entity.get_all_registered_stations(direction)
 
     async def get_stations_for_admin(self, direction: str, for_registration: bool = False) -> list[Station]:
+        logger.debug(f"Получение стаций в меню администартора в направлнеии {direction}, по api={for_registration}")
         if for_registration and direction:
-
             try:
                 list_stops_from_api: list[dict] = await self._api.get_all_stations_for_base_stations_thread()
             except self._api_error:
                 raise self._internal_error("Ошибка api.")
-
             all_stations = [self._station_model(**stop,
                                                 direction=self._direction_validator(
                                                     direction=direction).get_direction())
@@ -101,26 +116,32 @@ class ScheduleController:
         else:
             return await self._entity.get_all_registered_stations(direction)
 
-    async def get_directions(self):
+    async def get_directions(self) -> Type[StationsDirection]:
         return self._station_direction
 
-    async def get_text_direction(self, direction):
+    async def get_text_direction(self, direction) -> str:
         return self._direction_validator(direction=direction).get_text_direction()
 
-    async def get_edit_menu_values(self):
+    async def get_edit_menu_values(self) -> tuple[str, str]:
         return self._action_enum.DELETE, self._action_enum.MOVE
 
-    async def get_register_action(self):
+    async def get_register_action(self) -> str:
         return self._action_enum.REGISTER
 
-    async def get_schedule(self, departure_station_code, arrived_station_code, direction):
-        schedule, departure_station, arrived_station = await self._entity.get_schedule(departure_station_code,
-                                                                                       arrived_station_code,
-                                                                                       direction)
+    async def get_schedule(self, departure_station_code: str,
+                           arrived_station_code: str, direction: str) -> tuple[str, Station, Station]:
+        schedule, departure_station, arrived_station = await self._entity.get_schedule(
+            departure_station_code,
+            arrived_station_code,
+            direction
+        )
         return (
-            self._schedule_constructor.constructor(schedule.schedule,
-                                                   target_station_one=departure_station.title,
-                                                   target_station_two=arrived_station.title),
-            departure_station, arrived_station
+            self._schedule_constructor.constructor(
+                schedule.schedule,
+                target_station_one=departure_station.title,
+                target_station_two=arrived_station.title
+            ),
+            departure_station,
+            arrived_station
         )
 

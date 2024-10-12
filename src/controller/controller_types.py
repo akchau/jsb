@@ -3,7 +3,7 @@
 """
 import datetime
 from enum import Enum
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, root_validator
 
 
 class StationsDirection(str, Enum):
@@ -45,7 +45,18 @@ class Schedule(BaseModel):
     schedule: list[tuple]
     update_time: datetime.datetime
 
-    #TODO c помощью root validator проверить поля уникальны
+    @root_validator
+    def check_stations(cls, values: dict) -> dict:
+        """
+        Проверка кодов.
+        :param values: Значения полей моделей.
+        :return:
+        """
+        arrived_station_code = values.get('arrived_station_code')
+        departure_station_code = values.get('departure_station_code')
+        if arrived_station_code == departure_station_code:
+            raise ValueError('Коды должны отличаться')
+        return values
 
 
 class DirectionType(BaseModel):

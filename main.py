@@ -1,6 +1,12 @@
+import logging
+
+from src.logger import setup_logging
+setup_logging()
 import sys
 
 from src import start_bot
+
+logger = logging.getLogger(__name__)
 
 
 class CommandError(Exception):
@@ -13,6 +19,7 @@ REGISTERED_COMMANDS = {
 
 
 def main():
+    logger.info("Запуск приложения")
     args = sys.argv
     args_len = len(args)
 

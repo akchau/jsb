@@ -1,6 +1,8 @@
 """
 Обработчик редактирования зарегистрированных станций.
 """
+import logging
+
 from telegram import InlineKeyboardButton, Update, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
@@ -10,13 +12,17 @@ from src.bot.handlers.data_handler import parse_data, create_data
 from src.init_app import get_app_data
 
 
+logger = logging.getLogger(__name__)
+
+
 async def edit_station(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
     """
     Регистрация станции.
     """
     direction, code = await parse_data(update)
+    user = update.message.from_user if update.message else update.callback_query.from_user
+    logger.debug(f"ID={user.id} вошел в меню станции.")
     delete_action, move_action = await get_app_data().controller.get_edit_menu_values()
-
     buttons = [
         [
             InlineKeyboardButton(

@@ -10,11 +10,12 @@ from src.bot.handlers.data_handler import parse_data, create_data
 from src.init_app import get_app_data
 
 
-async def departure_station(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def departure_station(update: Update,
+                            context: ContextTypes.DEFAULT_TYPE) -> int:
     """
     Обработчик меню станции отправления.
     :param update:
-    :param _:
+    :param context:
     :return:
     """
     data = await parse_data(update)
@@ -30,9 +31,11 @@ async def departure_station(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
         chat_id = update.effective_chat.id
         current_message_id = update.effective_message.message_id
-        # TODO оставить сообщение start
         for message_id in range(current_message_id - 1, current_message_id - 10, -1):
             try:
+                message = await context.bot.get_message(chat_id=chat_id, message_id=message_id)
+                # if message.text == "/start":
+                #     continue
                 await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
             except Exception as e:
                 continue
