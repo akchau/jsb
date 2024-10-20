@@ -127,6 +127,10 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         await self.collections.stations.register_station(new_station)
         return await self.get_all_registered_stations()
 
+    async def get_station_by_code(self, code: str, direction: str):
+        station = await self.collections.stations.get_station(code, direction)
+        return await self.__model_transformator.transform(station, self._station_domain_model)
+
     async def get_all_registered_stations(self, direction=None,
                                           exclude_direction: bool = False) -> list[DomainStationObject]:
         """
@@ -159,17 +163,14 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
                            arrived_station_code: str,
                            direction: str) -> tuple[str, DomainStationObject, DomainStationObject]:
         """
-        Получение расписания.
+        Получение расписания вместе со станциями.
         :param departure_station_code Код станции отправления.
         :param arrived_station_code Код станции прибытия.
         :param direction Направление станции отправления.
         :return:
         """
-        departure_station: StationDocumentModel = await self.collections.stations.get_station(departure_station_code,
-                                                                                              direction)
-        arrived_station: StationDocumentModel = await self.collections.stations.get_station(
+        departure_station: DomainStationObject = await self.get_station_by_code(departure_station_code, direction)
+        arrived_station: DomainStationObject = await self.collections.stations.get_station(
             arrived_station_code, direction, exclude_direction=True)
         schedule = await self.collections.schedule.get_schedule(departure_station_code, arrived_station_code)
-        return (schedule,
-                await self.__model_transformator.transform(departure_station, self._station_domain_model),
-                await self.__model_transformator.transform(arrived_station, self._station_domain_model))
+        return schedule, departure_station, arrived_station

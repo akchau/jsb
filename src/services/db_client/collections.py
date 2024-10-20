@@ -1,6 +1,8 @@
 """
 Модуль коллекций.
 """
+import time
+
 from mongo_db_client.mongo_db_exceptions import BaseMongoTransportException
 
 from src.services.db_client.base import BaseDbCollection, CollectionModel
@@ -171,7 +173,7 @@ class RegisteredStationsDbCollection(BaseDbCollection):
         except BaseMongoTransportException as e:
             raise self._transport_error(str(e))
 
-    async def move_station(self, code: str, direction: str, new_direction) -> CollectionModel:
+    async def move_station(self, code: str, direction: str, new_direction: str) -> CollectionModel:
         """
         Переместить станцию.
         :param code: Код станци.
@@ -179,15 +181,18 @@ class RegisteredStationsDbCollection(BaseDbCollection):
         :return: Обновленные данные станции.
         """
         try:
+            print(direction, new_direction)
             station = await self.get_station(code, direction)
             another_direction_station = await self.get_station(code, direction, exclude_direction=True)
+            print(another_direction_station)
+            print(station)
             if another_direction_station:
                 return another_direction_station
             if station:
                 self._transport.update_field(
                     collection_name=self._collection_name,
                     field_name="direction",
-                    new_value=direction,
+                    new_value=new_direction,
                     instance_id=station.id)
                 updated_station = await self.get_station(code, new_direction)
                 if updated_station is None:

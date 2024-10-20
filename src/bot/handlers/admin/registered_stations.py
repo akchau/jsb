@@ -24,7 +24,7 @@ async def registered_stations(update: Update, _: ContextTypes.DEFAULT_TYPE) -> i
     """
     user = update.message.from_user if update.message else update.callback_query.from_user
     logger.debug(f"ID={user.id} выбирает направление для просмотра зарегистрированнных станций")
-    directions = await get_app_data().controller.get_directions()
+    directions = await get_app_data().admin_controller.get_directions()
     buttons = [
         [
             InlineKeyboardButton(
@@ -59,12 +59,12 @@ async def registered_stations_with_direction(update: Update, _: ContextTypes.DEF
     if len(parsed_data) == 3:
         direction, action, code = parsed_data
         logger.debug(f"fID={user.id} {action} станцию {code} в направлении {direction}:")
-        await get_app_data().controller.station_action(direction=direction, code=code, action=action)
+        await get_app_data().admin_controller.station_action(direction=direction, code=code, action=action)
     else:
         direction = parsed_data
-    stations = await get_app_data().controller.get_stations_for_admin(direction=direction)
+    stations = await get_app_data().admin_controller.get_stations(direction=direction)
     logger.debug(f"ID={user.id} Просматривает список станций в направлении {direction}. В списке {len(stations)} станции")
-    text_direction = await get_app_data().controller.get_text_direction(direction)
+    text_direction = await get_app_data().admin_controller.get_text_direction(direction)
     buttons = [
         *[
             [

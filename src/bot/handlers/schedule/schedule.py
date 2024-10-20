@@ -22,7 +22,7 @@ async def departure_station(update: Update,
 
     if data:
         arrived_code, direction = data
-        stations = await get_app_data().controller.get_stations_for_schedule(direction=direction)
+        stations = await get_app_data().schedule_controller.get_stations(direction=direction)
         station_buttons = [[InlineKeyboardButton(text=station.title,
                                                  callback_data=await create_data(
                                                     SCHEDULE_VIEW,
@@ -41,7 +41,7 @@ async def departure_station(update: Update,
                 continue
 
     else:
-        stations = await get_app_data().controller.get_stations_for_schedule()
+        stations = await get_app_data().schedule_controller.get_stations()
         station_buttons = [[InlineKeyboardButton(text=station.title,
                                                  callback_data=await create_data(
                                                      ARRIVED_STATION,
@@ -69,7 +69,7 @@ async def arrived_station(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
     """
 
     code, direction = await parse_data(update)
-    stations = await get_app_data().controller.get_stations_for_schedule(direction, exclude_direction=True)
+    stations = await get_app_data().schedule_controller.get_stations(direction, exclude_direction=True)
     buttons = [
         *[[InlineKeyboardButton(
             text=station.title,
@@ -96,7 +96,7 @@ async def schedule_view(update: Update, _: ContextTypes.DEFAULT_TYPE):
     :return:
     """
     departure_code, direction, arrived_code = await parse_data(update)
-    schedule, departure_station_db, arrived_station_db = await get_app_data().controller.get_schedule(
+    schedule, departure_station_db, arrived_station_db = await get_app_data().schedule_controller.get_schedule(
         departure_code,
         arrived_code,
         direction

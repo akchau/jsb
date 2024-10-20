@@ -4,18 +4,17 @@
 from telegram.ext import ConversationHandler, CommandHandler, CallbackQueryHandler
 
 from src.bot.handlers.handler_types import *
-from src.bot.handlers.edit_station import edit_station
+from src.bot.handlers.admin.edit_station import edit_station
 from src.bot.handlers.main_menu import main_menu, admin
-from src.bot.handlers.register_stations import register_station, register_station_with_direction
-from src.bot.handlers.registered_stations import registered_stations, registered_stations_with_direction
-from src.bot.handlers.schedule import arrived_station, departure_station, schedule_view
+from src.bot.handlers.admin.register_stations import register_station, register_station_with_direction
+from src.bot.handlers.admin.registered_stations import registered_stations, registered_stations_with_direction
+from src.bot.handlers.schedule.schedule import arrived_station, departure_station, schedule_view
 from src.bot.handlers.stop import stop
 
 
 main_conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", main_menu)],
         states={
-
             # ГЛАВНОЕ МЕНЮ
             MAIN_MENU: [
                 CallbackQueryHandler(admin, pattern="^" + str(ADMIN) + "$"),
