@@ -13,6 +13,9 @@ ScheduleModel = TypeVar("ScheduleModel")
 
 
 class ApiView(Generic[StationModel, ScheduleModel]):
+    """
+    Драйвер контроллера для взаимодействия с сервисом api
+    """
 
     def __init__(self, transport: TransportApiClient, station_model: StationModel, schedule_model: ScheduleModel):
         self.__api_client = transport
