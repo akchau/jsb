@@ -3,7 +3,6 @@
 """
 import asyncio
 from dataclasses import dataclass
-from typing import TypeVar, Generic, Type
 
 from mongo_db_client import MongoDbTransport
 from pydantic import ValidationError, BaseModel
@@ -13,34 +12,7 @@ from src.services.db_client.db_client_types import DbClientAuthModel, ScheduleDo
 from src.services.db_client.exc import ModelError
 
 
-DomainStationObject = TypeVar("DomainStationObject")
-DomainScheduleObject = TypeVar("DomainScheduleObject")
-
-TransformedModel = TypeVar("TransformedModel")
-
-
-class ModelTransformator(Generic[TransformedModel]):
-    """
-    Трансформатор моделей
-    """
-
-    def __init__(self, model_error: Exception):
-        self.model_error = model_error
-
-    async def transform(self, model: BaseModel, target_model: Type[TransformedModel]) -> TransformedModel:
-        """
-        Преобразование одной модели в другую.
-        :param model:
-        :param target_model:
-        :return:
-        """
-        try:
-            return target_model(**model.dict())
-        except ValidationError:
-            raise
-
-
-class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
+class ScheduleEntity:
     """
     Взаимодействие контроллера с БД через коллекции.
 
@@ -52,13 +24,13 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
     _model_error: Exception = ModelError
 
     @classmethod
-    def construct(cls, station_domain_model: Type[BaseModel], **kwargs):
+    def construct(cls, **kwargs):
         try:
-            return cls(client_data=cls._auth_model(**kwargs), station_domain_model=station_domain_model)
+            return cls(client_data=cls._auth_model(**kwargs))
         except ValidationError:
             raise ModelError("При пробросе данных авторизации произошла ошибка парсинга! Данные авторизации невалидны")
 
-    def __init__(self, station_domain_model: Type[BaseModel], client_data: DbClientAuthModel):
+    def __init__(self, client_data: DbClientAuthModel):
         transport = MongoDbTransport(**client_data.dict())
         @dataclass
         class Collections:
@@ -78,8 +50,6 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
                 collection_name="stations"
             )
         )
-        self._station_domain_model = station_domain_model
-        self.__model_transformator = ModelTransformator(self._model_error)
         self.__on_station_change = None
 
     async def __delete_related_schedule(self, station: StationDocumentModel) -> None:
@@ -92,7 +62,7 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
                      if station.code in {schedule.arrived_station_code, schedule.departure_station_code}]
         await asyncio.gather(*[self.collections.schedule.delete_schedule(schedule) for schedule in schedules])
 
-    async def delete_station(self, code, direction) -> list[DomainStationObject]:
+    async def delete_station(self, code, direction) -> list[StationDocumentModel]:
         """
         Удаление станции.
         :param code: Код станции.
@@ -103,7 +73,7 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         await self.__delete_related_schedule(station)
         return await self.get_all_registered_stations()
 
-    async def move_station(self, code, direction, new_direction) -> list[DomainStationObject]:
+    async def move_station(self, code, direction, new_direction) -> list[StationDocumentModel]:
         """
         Перемещение станции.
         :param code: Код станции.
@@ -114,54 +84,43 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         await self.__delete_related_schedule(station)
         return await self.get_all_registered_stations()
 
-    async def register_station(self, station: DomainStationObject) -> list[DomainStationObject]:
+    async def register_station(self, station: StationDocumentModel) -> list[StationDocumentModel]:
         """
         Регистрация станции.
         :param station: Новая станция.
         :return:
         """
         # TODO регистрация происходит наоборот
-
-        new_station: StationDocumentModel = await self.__model_transformator.transform(station,
-                                                                                       StationDocumentModel)
-        await self.collections.stations.register_station(new_station)
+        await self.collections.stations.register_station(station)
         return await self.get_all_registered_stations()
 
-    async def get_station_by_code(self, code: str, direction: str):
-        station = await self.collections.stations.get_station(code, direction)
-        return await self.__model_transformator.transform(station, self._station_domain_model)
+    async def get_station_by_code(self, code: str, direction: str) -> StationDocumentModel:
+        return await self.collections.stations.get_station(code, direction)
 
     async def get_all_registered_stations(self, direction=None,
-                                          exclude_direction: bool = False) -> list[DomainStationObject]:
+                                          exclude_direction: bool = False) -> list[StationDocumentModel]:
         """
         Получение списка зарегистрированных станций.
         :param direction Направление.
         :param exclude_direction Исключить направление.
         :return:
         """
-        return [
-            await self.__model_transformator.transform(station, self._station_domain_model)
-            for station in await self.collections.stations.get_all_registered_stations(direction, exclude_direction)
-        ]
+        return await self.collections.stations.get_all_registered_stations(direction, exclude_direction)
 
-    async def write_schedules(self, new_objects: list[DomainScheduleObject]) -> None:
+    async def write_schedules(self, new_objects: list[ScheduleDocumentModel]) -> None:
         """
-        Запись расписания.
-        :param new_object: Новое расписание.
+        Запись расписаний.
+        :param new_objects: Новые расписания.
         :return: None
         """
-        new_schedules = [
-            await self.__model_transformator.transform(new_object, ScheduleDocumentModel)
-            for new_object in new_objects
-        ]
         [
             await self.collections.schedule.write_schedule(new_schedule)
-            for new_schedule in new_schedules
+            for new_schedule in new_objects
         ]
 
     async def get_schedule(self, departure_station_code: str,
                            arrived_station_code: str,
-                           direction: str) -> tuple[str, DomainStationObject, DomainStationObject]:
+                           direction: str) -> tuple[ScheduleDocumentModel, StationDocumentModel, StationDocumentModel]:
         """
         Получение расписания вместе со станциями.
         :param departure_station_code Код станции отправления.
@@ -169,8 +128,8 @@ class ScheduleEntity(Generic[DomainStationObject, DomainScheduleObject]):
         :param direction Направление станции отправления.
         :return:
         """
-        departure_station: DomainStationObject = await self.get_station_by_code(departure_station_code, direction)
-        arrived_station: DomainStationObject = await self.collections.stations.get_station(
+        departure_station: StationDocumentModel = await self.get_station_by_code(departure_station_code, direction)
+        arrived_station: StationDocumentModel = await self.collections.stations.get_station(
             arrived_station_code, direction, exclude_direction=True)
-        schedule = await self.collections.schedule.get_schedule(departure_station_code, arrived_station_code)
+        schedule: ScheduleDocumentModel = await self.collections.schedule.get_schedule(departure_station_code, arrived_station_code)
         return schedule, departure_station, arrived_station

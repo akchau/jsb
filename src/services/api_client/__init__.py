@@ -1,5 +1,5 @@
 """
 Главный модуль api-клиента.
 """
-from .core import ApiInteractor
-from .exc import ApiError
+from .core import TransportApiClient
+from .api_client_types import ScheduleFromBaseStation, ThreadData

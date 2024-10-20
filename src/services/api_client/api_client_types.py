@@ -89,9 +89,11 @@ class ThreadData(BaseModel):
             for station in self.stops
         ]
 
+
 class TransportSubtype(BaseModel):
     title: str
     code: str
+
 
 class Thread(BaseModel):
     title: str
@@ -99,6 +101,7 @@ class Thread(BaseModel):
     express_type: Optional[str]
     vehicle: Optional[str]
     transport_subtype: TransportSubtype
+
 
 class Segment(BaseModel):
     thread: Thread

@@ -24,18 +24,6 @@ StationInTuple = tuple[str, str]
 ListStationInTuple = list[StationInTuple]
 
 
-class Station(BaseModel):
-    """
-    Станция
-    """
-    code: str
-    title: str
-    direction: StationsDirection
-
-    def __eq__(self, other: 'Station') -> bool:
-        return self.code == other.code and self.direction == other.direction
-
-
 class Schedule(BaseModel):
     """
     Расписание
