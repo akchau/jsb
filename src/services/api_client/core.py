@@ -4,7 +4,8 @@ Api-клиент
 import datetime
 from api_client import ApiClient
 
-from src.services.api_client.api_client_types import ScheduleFromBaseStation, ThreadData, ScheduleModel, StoreType
+from src.services.api_client.api_client_types import ScheduleFromBaseStation, ThreadData, StoreType, \
+    ScheduleResponse
 
 
 class TransportApiClient(ApiClient):
@@ -54,4 +55,4 @@ class TransportApiClient(ApiClient):
                 "date": datetime.datetime.today()
             }
         )
-        return ScheduleModel.parse_obj(schedule)
+        return ScheduleResponse.parse_obj(schedule)

@@ -113,7 +113,7 @@ class Segment(BaseModel):
     arrival: datetime
 
 
-class ScheduleModel(BaseModel):
+class ScheduleResponse(BaseModel):
     segments: list[Segment]
 
     def ext(self):

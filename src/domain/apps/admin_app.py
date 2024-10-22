@@ -1,3 +1,29 @@
+from typing import Type
+
+from src.domain.controller_types import DirectionType, StationsDirection, StationActionEnum
+from src.domain.exc import InternalError
+from src.domain.utils.api_view import ApiView
+from src.services import ScheduleEntity, DbClientException
+from src.services.db_client.db_client_types import StationDocumentModel, ScheduleDocumentModel
+
+
+def base_error_handler(func):
+
+    """
+    Декоратор обработает ошибки при работе с api
+    Глобальная ошибка которую выбрасывает транспорт -> Внутренняя ошибка.
+    Ошибка при парсинге модели ответа -> Внутренняя ошибка.
+    :param func:
+    :return:
+    """
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except DbClientException as e:
+            raise InternalError(str(e))
+    return wrapper
+
+
 class AdminApp:
 
     def __init__(self, view: ApiView, entity: ScheduleEntity):
@@ -5,11 +31,9 @@ class AdminApp:
         self.__entity = entity
 
         self._internal_error = InternalError
-        self._db_client_error = DbClientException
         self._direction_validator = DirectionType
         self._station_direction = StationsDirection
         self._action_enum = StationActionEnum
-        self._parsing_api_error = InternalError
 
 
     async def __call_change_station_callback(self, actual_stations_list: list[StationDocumentModel]):
@@ -20,6 +44,9 @@ class AdminApp:
             station for station in actual_stations_list if station.direction == self._station_direction.TO_MOSCOW
         ]
         for another_direction_station in await self.__entity.get_all_registered_stations(direction, True):
+
+
+
             direct_schedule = self.__schedule_view.get_schedule(departure_station_code=another_direction_station.code,
                                                                 arrived_station_code=)
             schedules = [
@@ -46,8 +73,9 @@ class AdminApp:
     async def get_register_action(self) -> str:
         return self._action_enum.REGISTER
 
+    @base_error_handler
     async def station_action(self, action: str, direction: str, code: str) -> None:
-        actual_stations_list = None
+        actual_stations_list = []
         direction_object: DirectionType = self._direction_validator(direction=direction)
         try:
             match action:
@@ -62,8 +90,7 @@ class AdminApp:
                     actual_stations_list: list[StationDocumentModel] = await self.__entity.register_station(
                         await self.__schedule_view.get_station_by_api(direction_object.get_direction(), code)
                     )
-        except self._db_client_error as e:
-            raise self._internal_error(str(e))
+
         if actual_stations_list:
             await self.__call_change_station_callback(actual_stations_list)
         else:

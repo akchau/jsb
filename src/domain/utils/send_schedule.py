@@ -1,7 +1,6 @@
 """
 Модуль отрисовки расписания в Telegram.
 """
-import datetime
 
 
 class DataConstructor:

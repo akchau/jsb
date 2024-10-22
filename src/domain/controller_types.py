@@ -5,6 +5,8 @@ import datetime
 from enum import Enum
 from pydantic import BaseModel, validator, root_validator
 
+from src.services.db_client.db_client_types import ScheduleDocumentModel
+
 
 class StationsDirection(str, Enum):
     """
@@ -100,3 +102,10 @@ class DirectionType(BaseModel):
         if v not in StationsDirection.__members__:
             raise ValueError("Ошибка напрвления")
         return v
+
+
+
+class SchedulesBetweenStations(BaseModel):
+    departure_station_code: str
+    arrived_station_code: str
+    schedules: tuple[ScheduleDocumentModel, ScheduleDocumentModel]
