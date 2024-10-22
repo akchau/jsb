@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Optional
 
 from pydantic import BaseModel
@@ -6,6 +7,11 @@ from pydantic import BaseModel
 (MAIN_MENU, ADMIN, REGISTER_STATION, REGISTER_STATION_WITH_DIRECTION,
  REGISTERED_STATIONS, REGISTERED_STATIONS_WITH_DIRECTION, DEPARTURE_STATION, ARRIVED_STATION,
  EDIT_STATION, SCHEDULE_VIEW) = range(10)
+
+
+class AppsEnum(str, Enum):
+    ADMIN = "ADMIN"
+    SCHEDULE = "SCHEDULE"
 
 
 class MenuSection(BaseModel):

@@ -1,6 +1,7 @@
 from typing import Type
 
-from src.domain.controller_types import DirectionType, StationsDirection, StationActionEnum
+from src.domain.base import BaseApp
+from src.domain.controller_types import DirectionType, StationsDirection, StationActionEnum, SchedulesBetweenStations
 from src.domain.exc import InternalError
 from src.domain.utils.api_view import ApiView
 from src.services import ScheduleEntity, DbClientException
@@ -24,11 +25,10 @@ def base_error_handler(func):
     return wrapper
 
 
-class AdminApp:
+class AdminApp(BaseApp):
 
     def __init__(self, view: ApiView, entity: ScheduleEntity):
-        self.__schedule_view = view
-        self.__entity = entity
+        super().__init__(view, entity)
 
         self._internal_error = InternalError
         self._direction_validator = DirectionType
@@ -43,12 +43,13 @@ class AdminApp:
         registered_stations_to_moscow: list[StationDocumentModel] = [
             station for station in actual_stations_list if station.direction == self._station_direction.TO_MOSCOW
         ]
-        for another_direction_station in await self.__entity.get_all_registered_stations(direction, True):
+        for another_direction_station in await self._entity.get_all_registered_stations(direction, True):
 
 
 
-            direct_schedule = self.__schedule_view.get_schedule(departure_station_code=another_direction_station.code,
-                                                                arrived_station_code=)
+            direct_schedule:  SchedulesBetweenStations = self._api_view.get_schedule(
+                departure_station_code=another_direction_station.code,
+                arrived_station_code=)
             schedules = [
                 ScheduleDocumentModel(schedule=direct_schedule.ext(),
                                       arrived_station_code=another_direction_station.code,
@@ -61,8 +62,13 @@ class AdminApp:
             await self.__entity.write_schedules(schedules)
         pass
 
-    async def get_directions(self) -> Type[StationsDirection]:
+    async def get_available_directions(self) -> Type[StationsDirection]:
         return self._station_direction
+
+    async def register_station_with_direction(self):
+        stations = await app.get_stations(self.__schedule_view, for_registration=True)
+        text_direction = await app.admin_controller.get_text_direction(direction)
+        register_action = app.admin_controller.get_register_action()
 
     async def get_text_direction(self, direction) -> str:
         return self._direction_validator(direction=direction).get_text_direction()

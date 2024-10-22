@@ -5,6 +5,6 @@ from src.services import ScheduleEntity
 class BaseApp:
 
     def __init__(self, view: ApiView, entity: ScheduleEntity):
-        self.__schedule_view = view
-        self.__entity = entity
+        self._api_view = view
+        self._entity = entity
 

@@ -6,18 +6,27 @@ from src.services.db_client.db_client_types import StationDocumentModel
 class ScheduleApp(BaseApp):
 
 
-    async def get_stations(self, direction, for_registration: bool = False) -> list[StationDocumentModel]:
-        """
-        Выдает контекст на стадии ввода станций
-        :param direction: Напарваленеи
-        :param for_registration:
-        :return:
-        """
-        if for_registration and direction:
-            return [station for station in await self.__schedule_view.get_all_stations_by_api(direction)
-                    if station not in await self.__entity.get_all_registered_stations(direction)]
+    async def arrived_station_view(self, data: tuple[str, str]) -> list[StationDocumentModel]:
+        departure_station_code, departure_station_direction = data
+        return [station
+             for station in await self._entity.get_all_registered_stations(
+                departure_station_direction,
+                exclude_direction=True
+            )
+            if station.code != departure_station_code
+        ]
+
+    async def departure_station_view(self, data: tuple[str, str] | None) -> list[StationDocumentModel]:
+        if data:
+            arrived_station_code, direction = data
+            stations = [
+                station for station in await self._entity.get_all_registered_stations(direction=direction)
+                if station.code != arrived_station_code
+            ]
         else:
-            return await self.__entity.get_all_registered_stations(direction)
+            stations = await self._entity.get_all_registered_stations()
+        return stations
+
 
     async def get_schedule(self, departure_station_code: str, arrived_station_code: str,
                            direction: str) -> tuple[str, StationDocumentModel, StationDocumentModel]:
