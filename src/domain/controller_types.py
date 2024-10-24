@@ -16,45 +16,14 @@ class StationsDirection(str, Enum):
     FROM_MOSCOW = "FROM_MOSCOW"
 
 
-class StationActionEnum(str, Enum):
-    DELETE = "DELETE"
-    MOVE = "MOVE"
-    REGISTER = "REGISTER"
-
-
-StationInTuple = tuple[str, str]
-ListStationInTuple = list[StationInTuple]
-
-
-class Schedule(BaseModel):
-    """
-    Расписание
-    """
-    arrived_station_code: str
-    departure_station_code: str
-    schedule: list[tuple]
-    update_time: datetime.datetime
-
-    @root_validator
-    def check_stations(cls, values: dict) -> dict:
-        """
-        Проверка кодов.
-        :param values: Значения полей моделей.
-        :return:
-        """
-        arrived_station_code = values.get('arrived_station_code')
-        departure_station_code = values.get('departure_station_code')
-        if arrived_station_code == departure_station_code:
-            raise ValueError('Коды должны отличаться')
-        return values
-
-
 class DirectionType(BaseModel):
     """
     Валидатор для направления.
     """
-
     direction: str
+
+    def get_tuple(self) -> tuple[str, StationsDirection]:
+        return self.get_text_direction(), self.get_direction()
 
     def get_text_direction(self) -> str:
         """
@@ -102,7 +71,6 @@ class DirectionType(BaseModel):
         if v not in StationsDirection.__members__:
             raise ValueError("Ошибка напрвления")
         return v
-
 
 
 class SchedulesBetweenStations(BaseModel):

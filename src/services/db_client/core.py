@@ -120,7 +120,7 @@ class ScheduleEntity:
 
     async def get_schedule(self, departure_station_code: str,
                            arrived_station_code: str,
-                           direction: str) -> tuple[ScheduleDocumentModel, StationDocumentModel, StationDocumentModel]:
+                           direction: str) -> ScheduleDocumentModel:
         """
         Получение расписания вместе со станциями.
         :param departure_station_code Код станции отправления.
@@ -128,8 +128,4 @@ class ScheduleEntity:
         :param direction Направление станции отправления.
         :return:
         """
-        departure_station: StationDocumentModel = await self.get_station_by_code(departure_station_code, direction)
-        arrived_station: StationDocumentModel = await self.collections.stations.get_station(
-            arrived_station_code, direction, exclude_direction=True)
-        schedule: ScheduleDocumentModel = await self.collections.schedule.get_schedule(departure_station_code, arrived_station_code)
-        return schedule, departure_station, arrived_station
+        return await self.collections.schedule.get_schedule(departure_station_code, arrived_station_code)

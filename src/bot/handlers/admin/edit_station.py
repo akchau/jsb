@@ -19,11 +19,6 @@ async def edit_station(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
     """
     Регистрация станции.
     """
-    direction, code = await parse_data(update)
-    station = await get_app_data().admin_controller.get_station(code, direction)
-    user = update.message.from_user if update.message else update.callback_query.from_user
-    logger.debug(f"ID={user.id} вошел в меню станции {station.title} в направлении {direction}.")
-    delete_action, move_action = await get_app_data().admin_controller.get_edit_menu_values()
     buttons = [
         [
             InlineKeyboardButton(
@@ -46,6 +41,7 @@ async def edit_station(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
         [InlineKeyboardButton(text=MenuSections.admin_zone.back_to_title, callback_data=str(ADMIN))]
     ]
     keyboard = InlineKeyboardMarkup(buttons)
+    # -----------------------------------------------Ответ бота--------------------------------------------------------#
     await update.callback_query.answer()
     await update.callback_query.edit_message_text(text=f"Выберите действие со станцией {station.title}:", reply_markup=keyboard)
     return EDIT_STATION

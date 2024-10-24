@@ -34,6 +34,7 @@ class Controller:
         self.__view = ApiView(self.__api_transport,
                               station_model=StationDocumentModel, schedule_model=ScheduleDocumentModel)
 
+
         @dataclass
         class Apps:
             schedule: Type[BaseApp]
@@ -47,8 +48,5 @@ class Controller:
             admin=AdminApp
         )
 
-
-        class Services
-
-    def app(self, app: str):
-        return getattr(self.__apps, app)
+    def apps(self):
+        return self.__apps

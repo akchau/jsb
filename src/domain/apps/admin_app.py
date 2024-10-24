@@ -1,3 +1,4 @@
+import logging
 from typing import Type
 
 from src.domain.base import BaseApp
@@ -6,6 +7,9 @@ from src.domain.exc import InternalError
 from src.domain.utils.api_view import ApiView
 from src.services import ScheduleEntity, DbClientException
 from src.services.db_client.db_client_types import StationDocumentModel, ScheduleDocumentModel
+
+
+logger = logging.getLogger(__name__)
 
 
 def base_error_handler(func):
@@ -62,43 +66,83 @@ class AdminApp(BaseApp):
             await self.__entity.write_schedules(schedules)
         pass
 
-    async def get_available_directions(self) -> Type[StationsDirection]:
-        return self._station_direction
 
-    async def register_station_with_direction(self):
-        stations = await app.get_stations(self.__schedule_view, for_registration=True)
-        text_direction = await app.admin_controller.get_text_direction(direction)
-        register_action = app.admin_controller.get_register_action()
+    async def edit_station_view(self, update):
+        user = update.message.from_user if update.message else update.callback_query.from_user
+        data: tuple[str, str] | None = await self.parse_data(update)
+        direction, code = data
+        station = await self._entity.get_station_by_code(code, direction)
+        logger.debug(f"ID={user.id} вошел в меню станции {station.title} в направлении {direction}.")
 
-    async def get_text_direction(self, direction) -> str:
-        return self._direction_validator(direction=direction).get_text_direction()
 
-    async def get_edit_menu_values(self) -> tuple[str, str]:
-        return self._action_enum.DELETE, self._action_enum.MOVE
-
-    async def get_register_action(self) -> str:
-        return self._action_enum.REGISTER
-
-    @base_error_handler
-    async def station_action(self, action: str, direction: str, code: str) -> None:
-        actual_stations_list = []
-        direction_object: DirectionType = self._direction_validator(direction=direction)
-        try:
+    async def registered_stations_with_direction_view(self, update):
+        user = update.message.from_user if update.message else update.callback_query.from_user
+        parsed_data = await self.parse_data(update)
+        if len(parsed_data) == 3:
+            direction, action, code = parsed_data
+            clean_direction = DirectionType(direction=direction)
+            logger.debug(f"fID={user.id} {action} станцию {code} в направлении {direction}:")
             match action:
                 case self._action_enum.DELETE:
-                    actual_stations_list: list[StationDocumentModel] = await self.__entity.delete_station(
-                        code, direction_object.get_direction())
+                    await self._entity.delete_station(
+                        code, clean_direction.get_direction())
                 case self._action_enum.MOVE:
-                    actual_stations_list: list[StationDocumentModel] = await self.__entity.move_station(
-                        code, direction_object.get_direction(),
-                        direction_object.get_another())
+                    await self._entity.move_station(
+                        code, clean_direction.get_direction(),
+                        clean_direction.get_another())
                 case self._action_enum.REGISTER:
-                    actual_stations_list: list[StationDocumentModel] = await self.__entity.register_station(
-                        await self.__schedule_view.get_station_by_api(direction_object.get_direction(), code)
+                    await self._entity.register_station(
+                        await self._api_view.get_station_by_api(clean_direction.get_direction(), code)
                     )
-
-        if actual_stations_list:
-            await self.__call_change_station_callback(actual_stations_list)
         else:
-            raise self._internal_error("Действие не вернуло актуальное сосотояние.")
+            direction = parsed_data
+            clean_direction = DirectionType(direction=direction)
+            logger.debug(
+                f"ID={user.id} Просматривает список станций в направлении {clean_direction.get_text_direction()}.")
+        registered_stations = await self._entity.get_all_registered_stations(clean_direction)
+        return {
+
+            "callback_data": [
+                (
+                    registered_station.title,
+                    await self.create_data(clean_direction.get_direction(),registered_station.code)
+                )
+                for registered_station in registered_stations
+            ],
+            "text_direction": clean_direction.get_text_direction(),
+            "direction": clean_direction.get_text_direction()
+        }
+
+    async def registered_stations_view(self, update):
+        user = update.message.from_user if update.message else update.callback_query.from_user
+        logger.debug(f"Пользователь: {user.id} выбирает направление станций")
+        return  {
+            "directions": [DirectionType(direction=direction).get_tuple()
+                           for direction in self._station_direction.__members__]
+        }
+
+    async def register_station_view(self, update) -> dict:
+        user = update.message.from_user if update.message else update.callback_query.from_user
+        logger.debug(f"Пользователь: {user.id} выбирает направление для регистрации станций")
+        return  {
+            "directions": [DirectionType(direction=direction).get_tuple()
+                           for direction in self._station_direction.__members__]
+        }
+
+    async def register_station_with_direction_view(self, update) -> dict:
+        direction: str = await self.parse_data(update)
+        clean_direction = DirectionType(direction=direction)
+        user = update.message.from_user if update.message else update.callback_query.from_user
+        logger.debug(f"Пользователь: {user} регистрирует станции в направлении {clean_direction.get_text_direction()}")
+        all_stations: list[StationDocumentModel] = await self._api_view.get_all_stations_by_api()
+        already_registered_stations: list[StationDocumentModel] = await self._entity.get_all_registered_stations(clean_direction.get_direction())
+        return {
+
+            "callback_data": [
+                (not_registered_station.title, await self.create_data(clean_direction.get_direction(),not_registered_station.code))
+                for not_registered_station in all_stations if not_registered_station not in already_registered_stations
+            ],
+            "text_direction": clean_direction.get_text_direction(),
+            "direction": clean_direction.get_text_direction()
+        }
 

@@ -6,7 +6,7 @@ import datetime
 import re
 from typing import Optional
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, root_validator
 
 
 # TODO Это походу тоже в базовый клиент
@@ -46,6 +46,12 @@ class BaseMongoModel(BaseModel):
         return current_data
 
 
+class StationActionEnum(str, Enum):
+    DELETE = "DELETE"
+    MOVE = "MOVE"
+    REGISTER = "REGISTER"
+
+
 class ScheduleDocumentModel(BaseMongoModel):
     """
     Модель документа расписания.
@@ -54,6 +60,19 @@ class ScheduleDocumentModel(BaseMongoModel):
     departure_station_code: str
     schedule: list[tuple]
     update_time: datetime.datetime
+
+    @root_validator
+    def check_stations(cls, values: dict) -> dict:
+        """
+        Проверка кодов.
+        :param values: Значения полей моделей.
+        :return:
+        """
+        arrived_station_code = values.get('arrived_station_code')
+        departure_station_code = values.get('departure_station_code')
+        if arrived_station_code == departure_station_code:
+            raise ValueError('Коды должны отличаться')
+        return values
 
 
 class StationDocumentModel(BaseMongoModel):
