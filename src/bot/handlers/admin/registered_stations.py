@@ -14,31 +14,6 @@ from src.init_app import get_app_data
 logger = logging.getLogger(__name__)
 
 
-async def registered_stations(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
-    """
-    Обработчик меню регистрации станции.
-    :param update:
-    :param _:
-    :return:
-    """
-    data = await get_app_data().controller.apps.admin.registered_stations_view(update)
-    buttons = [
-        [
-            *[InlineKeyboardButton(
-                text=text_direction,
-                callback_data=f"{str(REGISTER_STATION_WITH_DIRECTION)}/{direction}"
-            ) for text_direction, direction in data["directions"]],
-
-        ],
-        [InlineKeyboardButton(text=MenuSections.main_menu.back_to_title, callback_data=str(MAIN_MENU))],
-        [InlineKeyboardButton(text=MenuSections.admin_zone.back_to_title, callback_data=str(ADMIN))]
-    ]
-    keyboard = InlineKeyboardMarkup(buttons)
-    await update.callback_query.answer()
-    await update.callback_query.edit_message_text(text=MenuSections.my_stations.title, reply_markup=keyboard)
-    return REGISTERED_STATIONS
-
-
 async def registered_stations_with_direction(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
     """
     Регистрация станций от Москвы.
@@ -53,7 +28,7 @@ async def registered_stations_with_direction(update: Update, _: ContextTypes.DEF
              [
                  InlineKeyboardButton(text=title,
                                       callback_data=f"{str(EDIT_STATION)}/{callback_data}")
-                 for title, callback_data in data["callback_data"]
+                 for title, callback_data in data["registered_stations_buttons"]
              ]
         ],
         [

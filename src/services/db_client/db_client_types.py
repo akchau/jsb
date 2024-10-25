@@ -46,12 +46,6 @@ class BaseMongoModel(BaseModel):
         return current_data
 
 
-class StationActionEnum(str, Enum):
-    DELETE = "DELETE"
-    MOVE = "MOVE"
-    REGISTER = "REGISTER"
-
-
 class ScheduleDocumentModel(BaseMongoModel):
     """
     Модель документа расписания.

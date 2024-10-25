@@ -5,13 +5,12 @@ from telegram import InlineKeyboardButton, Update, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from src.bot.handlers.handler_types import *
-from src.bot.handlers.data_handler import parse_data, create_data
 from src.bot.utils import clean_all_messages_upper
 
 from src.init_app import get_app_data
 
 
-async def departure_station_view(update: Update,
+async def departure_station(update: Update,
                             context: ContextTypes.DEFAULT_TYPE) -> int:
     """
     Обработчик меню станции отправления.
@@ -19,49 +18,26 @@ async def departure_station_view(update: Update,
     :param context:
     :return:
     """
-    data: tuple[str, str] | None = await parse_data(update)
-    arrived_station_already_choice = True if data else None
-    departure_stations = await get_app_data().controller.apps.schedule.departure_station_view(data)
-    if arrived_station_already_choice:
-        arrived_station_code, _ = data
-        context_data = [
-            (
-                departure_station_item.title,
-                await create_data(
-                    SCHEDULE_VIEW,
-                    departure_station_item.code, departure_station_item.direction, arrived_station_code
-                )
-            ) for departure_station_item in departure_stations
-        ]
-    else:
-        context_data = [
-            (
-                departure_station_item.title,
-                await create_data(
-                    ARRIVED_STATION,
-                    departure_station_item.code, departure_station_item.direction
-                )
-            ) for departure_station_item in departure_stations
-        ]
+    data: dict = await get_app_data().controller.apps.schedule.departure_station_view(update)
     buttons = [
         *[
             [
                 InlineKeyboardButton(
-                    text=text,
+                    text=title,
                     callback_data=callback_data
                 )
             ]
-            for text, callback_data in context_data],
+            for title, callback_data in data["available_departure_stations_buttons"]],
         [InlineKeyboardButton(text=MenuSections.main_menu.back_to_title, callback_data=str(MAIN_MENU))]
     ]
     keyboard = InlineKeyboardMarkup(buttons)
     await clean_all_messages_upper(update, context)
     await update.callback_query.answer()
-    await update.callback_query.edit_message_text(MenuSections.departure_station.title, reply_markup=keyboard)
+    await update.callback_query.edit_message_text(data["message"], reply_markup=keyboard)
     return DEPARTURE_STATION
 
 
-async def arrived_station_view(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
+async def arrived_station(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
     """
     Обработчик меню станции отправления.
     :param update:
@@ -70,13 +46,15 @@ async def arrived_station_view(update: Update, _: ContextTypes.DEFAULT_TYPE) -> 
     """
     data: dict = await get_app_data().controller.apps.schedule.arrived_station_view(update)
     buttons = [
-        *[[InlineKeyboardButton(
-            text=arrived_station_item.title,
-            callback_data=await create_data(SCHEDULE_VIEW,
-                                            data["departure_station_code"],
-                                            data["departure_station_direction"],
-                                            arrived_station_item.code))]
-            for arrived_station_item in data["available_arrived_stations"]],
+        *[
+            [
+                InlineKeyboardButton(
+                    text=title,
+                    callback_data=callback_data
+                )
+            ]
+            for title, callback_data in data["available_arrived_stations_buttons"]
+        ],
         [
             InlineKeyboardButton(text=MenuSections.main_menu.back_to_title,
                                  callback_data=str(MAIN_MENU)),
@@ -86,11 +64,11 @@ async def arrived_station_view(update: Update, _: ContextTypes.DEFAULT_TYPE) -> 
     ]
     keyboard = InlineKeyboardMarkup(buttons)
     await update.callback_query.answer()
-    await update.callback_query.edit_message_text(MenuSections.arrived_station.title, reply_markup=keyboard)
+    await update.callback_query.edit_message_text(data["message"], reply_markup=keyboard)
     return ARRIVED_STATION
 
 
-async def schedule_view(update: Update, _: ContextTypes.DEFAULT_TYPE):
+async def schedule(update: Update, _: ContextTypes.DEFAULT_TYPE):
     """
     Обработчик меню станции отправления.
     :param update:
@@ -98,17 +76,17 @@ async def schedule_view(update: Update, _: ContextTypes.DEFAULT_TYPE):
     :return:
     """
     data: dict = await get_app_data().controller.apps.schedule.schedule_view(update)
-    arrived_station = data["arrived_station"]
-    departure_station = data["departure_station"]
+    change_arrived_station_button = data["change_arrived_station_button"]
     buttons = [
-        [InlineKeyboardButton(text=MenuSections.arrived_station.back_to_title,
-                              callback_data=await create_data(str(ARRIVED_STATION),
-                                                              departure_station.code,
-                                                              departure_station.direction)),
-         InlineKeyboardButton(text=MenuSections.departure_station.back_to_title,
-                              callback_data=await create_data(str(DEPARTURE_STATION),
-                                                              arrived_station.code,
-                                                                    ))],
+        *[
+            [
+                InlineKeyboardButton(*data["change_arrived_station_button"]),
+                InlineKeyboardButton(
+                    text=title,
+                    callback_data=f"{str(EDIT_STATION)}/{}"
+                )
+            ]
+        ],
         [InlineKeyboardButton(text=MenuSections.main_menu.back_to_title,
                               callback_data=str(MAIN_MENU))]
     ]
@@ -118,6 +96,5 @@ async def schedule_view(update: Update, _: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.answer()
     for time in data["schedule"]:
         await update.effective_message.reply_text(time)
-    await update.effective_message.reply_text(f"Расписание {departure_station.title} - "
-                                              f"{arrived_station.title}", reply_markup=keyboard)
+    await update.effective_message.reply_text(data["message"], reply_markup=keyboard)
     return SCHEDULE_VIEW

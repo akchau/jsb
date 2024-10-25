@@ -1,11 +1,16 @@
 """
 Типы контроллера
 """
-import datetime
 from enum import Enum
-from pydantic import BaseModel, validator, root_validator
+from pydantic import BaseModel, validator
 
 from src.services.db_client.db_client_types import ScheduleDocumentModel
+
+
+class StationActionEnum(str, Enum):
+    DELETE = "DELETE"
+    MOVE = "MOVE"
+    REGISTER = "REGISTER"
 
 
 class StationsDirection(str, Enum):
