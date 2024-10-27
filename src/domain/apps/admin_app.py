@@ -1,8 +1,9 @@
 import logging
 from datetime import datetime
 
-from src.domain.base import BaseApp
-from src.domain.controller_types import DirectionType, StationsDirection, StationActionEnum, SchedulesBetweenStations
+from src.domain.base import BaseApp, DataHandler
+from src.domain.controller_types import DirectionType, StationsDirection, StationActionEnum, SchedulesBetweenStations, \
+    MenuSections
 from src.domain.exc import InternalError
 from src.domain.utils.api_view import ApiView
 from src.services import ScheduleEntity, DbClientException
@@ -27,7 +28,6 @@ def base_error_handler(func):
         except DbClientException as e:
             raise InternalError(str(e))
     return wrapper
-
 
 
 class StationsManager:
@@ -62,7 +62,6 @@ class StationsManager:
         #                               update_time=datetime.now())]
         #     await self.__entity.write_schedules(schedules)
         pass
-
 
     async def get_actions(self):
         return {
@@ -102,16 +101,25 @@ class AdminApp(BaseApp):
         self._station_direction = StationsDirection
         self.station_manger = StationsManager(entity=self._entity, api_view=self._api_view)
 
-    async def edit_station_view(self, user, data):
-        direction, code = data
+    async def edit_station_view(self, update):
+        context = await DataHandler().get_context(update)
+        user = context.user
+        data = context.data
         station = await self._entity.get_station_by_code(code, direction)
         logger.debug(f"ID={user.id} вошел в меню станции {station.title} в направлении {direction}.")
 
-    async def registered_stations_with_direction_view(self, user, data):
-        clean_direction = StationsDirection.FROM_MOSCOW
+    async def registered_stations_with_direction_view(self, update):
+        context = await DataHandler().get_context(update)
+        user = context.user
+        data = context.data
+        clean_direction = DirectionType(direction=StationsDirection.FROM_MOSCOW)
+        logger.debug(f"Пользователь {user.username} просматривает список зарегистрированных станций.")
         if data is not None:
             clean_direction = DirectionType(direction=data["direction"])
-            await self.station_manger.station_action(**data)
+            if data.get("action"):
+                await self.station_manger.station_action(**data)
+        else:
+            clean_direction = DirectionType(direction=StationsDirection.FROM_MOSCOW)
         registered_stations_in_direction = await self._entity.get_all_registered_stations(clean_direction)
         return {
             "registered_stations_buttons": [
@@ -127,12 +135,33 @@ class AdminApp(BaseApp):
                 for registered_station_in_direction in registered_stations_in_direction
             ],
             "text_direction": clean_direction.get_text_direction(),
-            "direction": clean_direction.get_text_direction()
+            "direction": clean_direction.get_text_direction(),
+            "registered_stations_another_direction_button": (
+                "Сменить направление",
+                await self._context_creator.create_data(
+                    {
+                        "direction": clean_direction.get_another()
+                    }
+                )
+            ),
+            "register_stations_current_direction_button": (
+                "Зарегистрировать",
+                await self._context_creator.create_data(
+                    {
+                        "direction": clean_direction.get_another()
+                    }
+                )
+            ),
+            "message": "Мои зарегистрированные станции.",
+            "back_to_menu_title": MenuSections.main_menu.back_to_title
         }
 
-    async def register_station_with_direction_view(self, user, data) -> dict:
+    async def register_station_with_direction_view(self, update) -> dict:
+        context = await DataHandler().get_context(update)
+        user = context.user
+        data = context.data
         clean_direction = DirectionType(direction=data)
-        logger.debug(f"Пользователь: {user} регистрирует станции в направлении {clean_direction.get_text_direction()}")
+        logger.debug(f"Пользователь: {user.username} регистрирует станции в направлении {clean_direction.get_text_direction()}")
         all_stations: list[StationDocumentModel] = await self._api_view.get_all_stations_by_api()
         already_registered_stations: list[StationDocumentModel] = await self._entity.get_all_registered_stations(clean_direction.get_direction())
         return {
