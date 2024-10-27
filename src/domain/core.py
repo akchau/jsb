@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class Controller:
 
-    def __init__(self, pagination: int, base_url: str, api_key: str, base_station_code: str, **kwargs):
+    def __init__(self, base_url: str, api_key: str, base_station_code: str, **kwargs):
         self.__entity = ScheduleEntity.construct(**kwargs)
         self.__api_transport = TransportApiClient(
             base_url=base_url,
@@ -34,19 +34,16 @@ class Controller:
         self.__view = ApiView(self.__api_transport,
                               station_model=StationDocumentModel, schedule_model=ScheduleDocumentModel)
 
-
         @dataclass
         class Apps:
-            schedule: Type[BaseApp]
-            admin: Type[AdminApp]
-
-            def get_app(self, name: str) -> BaseApp:
-                return getattr(self, name)
+            schedule: BaseApp
+            admin: BaseApp
 
         self.__apps = Apps(
-            schedule=ScheduleApp,
-            admin=AdminApp
+            schedule=ScheduleApp(view=self.__view, entity=self.__entity),
+            admin=AdminApp(view=self.__view, entity=self.__entity)
         )
 
+    @property
     def apps(self):
         return self.__apps

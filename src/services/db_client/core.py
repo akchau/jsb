@@ -128,4 +128,5 @@ class ScheduleEntity:
         :param direction Направление станции отправления.
         :return:
         """
-        return await self.collections.schedule.get_schedule(departure_station_code, arrived_station_code)
+        schedule = await self.collections.schedule.get_schedule(departure_station_code, arrived_station_code)
+        return schedule

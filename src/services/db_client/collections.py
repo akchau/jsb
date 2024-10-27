@@ -36,7 +36,7 @@ class ScheduleDbCollection(BaseDbCollection):
                 if (schedule.departure_station_code == departure_station_code and
                         schedule.arrived_station_code == arrived_station_code):
                     return schedule
-            return None
+            raise self._not_exist_exception
         except BaseMongoTransportException as e:
             raise self._transport_error(str(e))
 
@@ -181,11 +181,8 @@ class RegisteredStationsDbCollection(BaseDbCollection):
         :return: Обновленные данные станции.
         """
         try:
-            print(direction, new_direction)
             station = await self.get_station(code, direction)
             another_direction_station = await self.get_station(code, direction, exclude_direction=True)
-            print(another_direction_station)
-            print(station)
             if another_direction_station:
                 return another_direction_station
             if station:

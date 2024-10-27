@@ -4,11 +4,10 @@
 from telegram.ext import ConversationHandler, CommandHandler, CallbackQueryHandler
 
 from src.bot.handlers.handler_types import *
-from src.bot.handlers.admin.edit_station import edit_station
-from src.bot.handlers.main_menu import main_menu, admin
-from src.bot.handlers.admin.register_stations import register_station_with_direction
-from src.bot.handlers.admin.registered_stations import registered_stations_with_direction
-from src.bot.handlers.schedule.schedule import arrived_station, departure_station, schedule
+from src.bot.handlers.main_menu import main_menu
+from src.bot.handlers.register_stations import (edit_station, register_station_with_direction,
+                                                registered_stations_with_direction)
+from src.bot.handlers.schedule import arrived_station, departure_station, schedule
 from src.bot.handlers.stop import stop
 
 
@@ -17,32 +16,19 @@ main_conv_handler = ConversationHandler(
         states={
             # ------------------------------------------- ГЛАВНОЕ МЕНЮ -------------------------------------------------
             MAIN_MENU: [
-                CallbackQueryHandler(admin, pattern="^" + str(ADMIN) + "$"),
                 CallbackQueryHandler(departure_station, pattern="^" + str(DEPARTURE_STATION) + "$")
 
             ],
             # -------------------------------------------= ПРИЛОЖЕНИЯ --------------------------------------------------
             # --------------------------------------------- АДМИНКА ----------------------------------------------------
-            # МЕНЮ АДМИНКИ
-            ADMIN: [
-                # ПЕРЕХОД К ВЫБОРУ НАПРАВЛЕНИЯ РЕГИСТРАЦИИ СТАНЦИИ
-                CallbackQueryHandler(register_station_with_direction,
-                                     pattern="^" + str(REGISTER_STATION_WITH_DIRECTION) + "$"),
-                CallbackQueryHandler(registered_stations_with_direction,
-                                     pattern="^" + str(REGISTERED_STATIONS_WITH_DIRECTION) + "$"),
-                CallbackQueryHandler(main_menu, pattern="^" + str(MAIN_MENU) + "$")
-            ],
             # ВЫБОР ДЕЙСТВИЯ СО СТАНЦИЕЙ
             EDIT_STATION: [
                 CallbackQueryHandler(registered_stations_with_direction,
                                      pattern="^" + str(REGISTERED_STATIONS_WITH_DIRECTION)),
-                CallbackQueryHandler(main_menu, pattern="^" + str(MAIN_MENU) + "$"),
-                CallbackQueryHandler(admin, pattern="^" + str(ADMIN) + "$"),
+                CallbackQueryHandler(main_menu, pattern="^" + str(MAIN_MENU) + "$")
             ],
             # ВЫБОР НОВОЙ СТАНЦИИ
             REGISTER_STATION_WITH_DIRECTION: [
-                CallbackQueryHandler(admin,
-                                     pattern="^" + str(ADMIN) + "$"),
                 CallbackQueryHandler(main_menu,
                                      pattern="^" + str(MAIN_MENU) + "$"),
                 CallbackQueryHandler(registered_stations_with_direction,
@@ -54,8 +40,6 @@ main_conv_handler = ConversationHandler(
                 CallbackQueryHandler(edit_station, pattern="^" + str(EDIT_STATION)),
                 CallbackQueryHandler(register_station_with_direction,
                                      pattern="^" + str(REGISTER_STATION_WITH_DIRECTION)),
-                CallbackQueryHandler(registered_stations, pattern="^" + str(REGISTERED_STATIONS) + "$"),
-                CallbackQueryHandler(admin, pattern="^" + str(ADMIN) + "$"),
                 CallbackQueryHandler(main_menu,
                                      pattern="^" + str(MAIN_MENU) + "$"),
             ],
@@ -66,18 +50,18 @@ main_conv_handler = ConversationHandler(
             DEPARTURE_STATION: [
                 CallbackQueryHandler(main_menu, pattern="^" + str(MAIN_MENU) + "$"),
                 CallbackQueryHandler(arrived_station, pattern="^" + str(ARRIVED_STATION)),
-                CallbackQueryHandler(schedule_view, pattern="^" + str(SCHEDULE_VIEW))
+                CallbackQueryHandler(schedule, pattern="^" + str(SCHEDULE))
             ],
 
             # СТАНЦИЯ ПРИБЫТИЯ
             ARRIVED_STATION: [
                 CallbackQueryHandler(main_menu, pattern="^" + str(MAIN_MENU) + "$"),
-                CallbackQueryHandler(schedule_view, pattern="^" + str(SCHEDULE_VIEW)),
-                CallbackQueryHandler(departure_station, pattern="^" + str(DEPARTURE_STATION))
+                CallbackQueryHandler(departure_station, pattern="^" + str(DEPARTURE_STATION)),
+                CallbackQueryHandler(schedule, pattern="^" + str(SCHEDULE))
             ],
 
             # ОТОБРАЖЕНИЕ С ПАГИНАЦИЕЙ
-            SCHEDULE_VIEW: [
+            SCHEDULE: [
                 CallbackQueryHandler(arrived_station, pattern="^" + str(ARRIVED_STATION)),
                 CallbackQueryHandler(departure_station, pattern="^" + str(DEPARTURE_STATION)),
                 CallbackQueryHandler(main_menu, pattern="^" + str(MAIN_MENU) + "$")

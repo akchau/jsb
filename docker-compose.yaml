@@ -1,4 +1,16 @@
+version: '3.1'
 services:
+#  web_server:
+#    build:
+#      context: .
+#    environment:
+#      - SSH_PRIVATE_KEY=${SSH_PRIVATE_KEY}
+#      - EXTERNAL_PORT=${EXTERNAL_PORT}
+#      - APP_PORT=${APP_PORT}
+#    ports:
+#      - "${EXTERNAL_PORT}:${APP_PORT}"
+#    env_file:
+#      - ".env"
   mongo:
     image: mongo
     volumes:

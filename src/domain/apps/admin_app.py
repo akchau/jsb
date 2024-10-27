@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from src.domain.base import BaseApp, app_handler
+from src.domain.base import BaseApp
 from src.domain.controller_types import DirectionType, StationsDirection, StationActionEnum, SchedulesBetweenStations
 from src.domain.exc import InternalError
 from src.domain.utils.api_view import ApiView
@@ -38,29 +38,29 @@ class StationsManager:
         self.__api_view = api_view
 
     async def __call_change_station_callback(self, actual_stations_list: list[StationDocumentModel]):
-        registered_stations_from_moscow: list[StationDocumentModel] = [
-            station for station in actual_stations_list if station.direction == self._station_direction.FROM_MOSCOW
-        ]
-        registered_stations_to_moscow: list[StationDocumentModel] = [
-            station for station in actual_stations_list if station.direction == self._station_direction.TO_MOSCOW
-        ]
-        for another_direction_station in await self._entity.get_all_registered_stations(direction, True):
-
-
-
-            direct_schedule:  SchedulesBetweenStations = self._api_view.get_schedule(
-                departure_station_code=another_direction_station.code,
-                arrived_station_code=)
-            schedules = [
-                ScheduleDocumentModel(schedule=direct_schedule.ext(),
-                                      arrived_station_code=another_direction_station.code,
-                                      departure_station_code=code,
-                                      update_time=datetime.now()),
-                ScheduleDocumentModel(schedule=back_schedule.dict(),
-                                      arrived_station_code=code,
-                                      departure_station_code=another_direction_station.code,
-                                      update_time=datetime.now())]
-            await self.__entity.write_schedules(schedules)
+        # registered_stations_from_moscow: list[StationDocumentModel] = [
+        #     station for station in actual_stations_list if station.direction == self._station_direction.FROM_MOSCOW
+        # ]
+        # registered_stations_to_moscow: list[StationDocumentModel] = [
+        #     station for station in actual_stations_list if station.direction == self._station_direction.TO_MOSCOW
+        # ]
+        # for another_direction_station in await self._entity.get_all_registered_stations(direction, True):
+        #
+        #
+        #
+        #     direct_schedule:  SchedulesBetweenStations = self._api_view.get_schedule(
+        #         departure_station_code=another_direction_station.code,
+        #         arrived_station_code=)
+        #     schedules = [
+        #         ScheduleDocumentModel(schedule=direct_schedule.ext(),
+        #                               arrived_station_code=another_direction_station.code,
+        #                               departure_station_code=code,
+        #                               update_time=datetime.now()),
+        #         ScheduleDocumentModel(schedule=back_schedule.dict(),
+        #                               arrived_station_code=code,
+        #                               departure_station_code=another_direction_station.code,
+        #                               update_time=datetime.now())]
+        #     await self.__entity.write_schedules(schedules)
         pass
 
 
@@ -93,7 +93,6 @@ class StationsManager:
                 )
 
 
-
 class AdminApp(BaseApp):
 
     def __init__(self, view: ApiView, entity: ScheduleEntity):
@@ -103,22 +102,16 @@ class AdminApp(BaseApp):
         self._station_direction = StationsDirection
         self.station_manger = StationsManager(entity=self._entity, api_view=self._api_view)
 
-    @app_handler
     async def edit_station_view(self, user, data):
         direction, code = data
         station = await self._entity.get_station_by_code(code, direction)
         logger.debug(f"ID={user.id} вошел в меню станции {station.title} в направлении {direction}.")
 
-    @app_handler
     async def registered_stations_with_direction_view(self, user, data):
         clean_direction = StationsDirection.FROM_MOSCOW
         if data is not None:
             clean_direction = DirectionType(direction=data["direction"])
             await self.station_manger.station_action(**data)
-
-        logger.debug(f"ID={user.id} Просматривает список станций"
-                     f" в направлении {clean_direction.get_text_direction()}.")
-
         registered_stations_in_direction = await self._entity.get_all_registered_stations(clean_direction)
         return {
             "registered_stations_buttons": [
@@ -137,7 +130,6 @@ class AdminApp(BaseApp):
             "direction": clean_direction.get_text_direction()
         }
 
-    @app_handler
     async def register_station_with_direction_view(self, user, data) -> dict:
         clean_direction = DirectionType(direction=data)
         logger.debug(f"Пользователь: {user} регистрирует станции в направлении {clean_direction.get_text_direction()}")

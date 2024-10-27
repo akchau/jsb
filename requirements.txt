@@ -15,7 +15,7 @@ idna==3.7
 iniconfig==2.0.0
 isort==5.13.2
 mccabe==0.7.0
-mongo-db-client==0.1
+git+ssh://git@github.com/akchau/mongo_db_client.git
 packaging==24.1
 platformdirs==4.3.6
 pluggy==1.5.0
